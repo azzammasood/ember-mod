@@ -1,0 +1,35 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "ember-mod",
+  "permissions": {
+    "reddit": {
+      "enable": true,
+      "scope": "moderator"
+    },
+    "redis": true
+  },
+  "blocks": {
+    "entry": "src/main.tsx",
+    "settings": {
+      "enable": true
+    },
+    "triggers": [
+      "onPostSubmit",
+      "onCommentSubmit",
+      "onPostReport",
+      "onCommentReport",
+      "onModAction",
+      "onAppInstall",
+      "onAppUpgrade"
+    ]
+  },
+  "media": {
+    "dir": "assets"
+  },
+  "marketingAssets": {
+    "icon": "assets/$devvit_icon.png"
+  },
+  "dev": {
+    "subreddit": "ember_mod_dev"
+  }
+}
