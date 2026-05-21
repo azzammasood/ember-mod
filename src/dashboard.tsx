@@ -46,35 +46,32 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
 
   const meta = LEVEL_META[snap.level];
   return (
-    <vstack padding="large" gap="medium" width="100%" backgroundColor="#070b12">
+    <vstack padding="medium" gap="small" width="100%" backgroundColor="#070b12">
       <hstack alignment="middle center" gap="small" width="100%">
-        <text size="xxlarge">{FLAME}</text>
+        <text size="large">{FLAME}</text>
         <vstack gap="none" width="100%">
-          <text size="xxlarge" weight="bold" color="#FF6B35">EMBER</text>
+          <text size="xlarge" weight="bold" color="#FF6B35">EMBER</text>
           <text size="xsmall" color="#94a3b8">Live community threat radar</text>
         </vstack>
       </hstack>
 
       <vstack backgroundColor={meta.bg} cornerRadius="large" padding="medium" gap="small" width="100%">
-        <hstack alignment="middle center" gap="small" width="100%">
-          <vstack gap="none">
-            <text size="xlarge" weight="bold" color="#ffffff">{snap.total}/100</text>
-            <text size="xsmall" color="#e5e7eb">Heat Score</text>
-          </vstack>
-          <vstack gap="small" width="100%">
-            <text size="medium" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
-            <text size="xsmall" color="#f8fafc">{statusLine(snap)}</text>
-            <hstack gap="none" width="100%" height="12px">
-              <vstack width={`${snap.total}%`} height="12px" backgroundColor="#ffffff" cornerRadius="full" />
-              <vstack width={`${100 - snap.total}%`} height="12px" backgroundColor="#334155" cornerRadius="full" />
-            </hstack>
-          </vstack>
+        <hstack alignment="middle center" gap="medium" width="100%">
+          <text size="xlarge" weight="bold" color="#ffffff">{snap.total}/100</text>
+          <text size="medium" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
+        </hstack>
+        <text size="xsmall" color="#f8fafc">{statusLine(snap)}</text>
+        <hstack gap="none" width="100%" height="10px">
+          <vstack width={`${snap.total}%`} height="10px" backgroundColor="#ffffff" cornerRadius="full" />
+          <vstack width={`${100 - snap.total}%`} height="10px" backgroundColor="#334155" cornerRadius="full" />
         </hstack>
       </vstack>
 
-      <vstack backgroundColor="#0f172a" cornerRadius="large" padding="medium" gap="small" width="100%">
+      <vstack backgroundColor="#0f172a" cornerRadius="large" padding="small" gap="small" width="100%">
         <hstack alignment="middle center" width="100%">
           <text size="small" weight="bold" color="#e2e8f0">Signal Heatmap</text>
+          <spacer size="small" />
+          <text size="xsmall" color="#64748b">{dominantSignal(snap)}</text>
         </hstack>
         {heatmapRow(SIGNALS[0], snap)}
         {heatmapRow(SIGNALS[1], snap)}
@@ -83,20 +80,10 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
         {heatmapRow(SIGNALS[4], snap)}
       </vstack>
 
-      <hstack gap="medium" width="100%">
-        {miniMetric('Primary Risk', dominantSignal(snap), LEVEL_META[snap.level].accent)}
-        {miniMetric('Baseline', baselineText(snap), '#38bdf8')}
-      </hstack>
-
-      <hstack gap="medium" width="100%">
-        {miniMetric('Alert Line', `${config.alertThreshold}/100`, '#f97316')}
-        {miniMetric('Level', snap.level.toUpperCase(), meta.accent)}
-      </hstack>
-
       <hstack alignment="middle center" width="100%">
-        <text size="xsmall" color="#64748b">Last updated: {formatTime(snap.computedAt)}</text>
+        <text size="xsmall" color="#64748b">Updated {formatTime(snap.computedAt)}</text>
         <spacer size="medium" />
-        <text size="xsmall" color="#64748b">Cooldown: {config.alertCooldownMinutes} min</text>
+        <text size="xsmall" color="#64748b">Threshold {config.alertThreshold} - {baselineText(snap)}</text>
       </hstack>
     </vstack>
   );
@@ -123,7 +110,7 @@ function heatmapRow(signal: HeatmapSignal, snap: SignalSnapshot): JSX.Element {
   const activeCells = Math.max(0, Math.min(10, Math.ceil((score / signal.max) * 10)));
   return (
     <hstack gap="small" alignment="middle center" width="100%">
-      <text size="xsmall" color="#cbd5e1" weight="bold" width="82px" overflow="ellipsis">{signal.label}</text>
+      <text size="xsmall" color="#cbd5e1" weight="bold" width="76px" overflow="ellipsis">{signal.label}</text>
       {heatCell(1, activeCells, signal.color)}
       {heatCell(2, activeCells, signal.color)}
       {heatCell(3, activeCells, signal.color)}
@@ -134,7 +121,7 @@ function heatmapRow(signal: HeatmapSignal, snap: SignalSnapshot): JSX.Element {
       {heatCell(8, activeCells, signal.color)}
       {heatCell(9, activeCells, signal.color)}
       {heatCell(10, activeCells, signal.color)}
-      <text size="xsmall" color="#94a3b8" width="44px">{score}/{signal.max}</text>
+      <text size="xsmall" color="#94a3b8" width="42px">{score}/{signal.max}</text>
     </hstack>
   );
 }
@@ -143,20 +130,11 @@ function heatCell(index: number, activeCells: number, color: string): JSX.Elemen
   const active = index <= activeCells;
   return (
     <vstack
-      width="14px"
-      height="14px"
+      width="12px"
+      height="12px"
       cornerRadius="small"
       backgroundColor={active ? color : '#1e293b'}
     />
-  );
-}
-
-function miniMetric(label: string, value: string, color: string): JSX.Element {
-  return (
-    <vstack backgroundColor="#111827" cornerRadius="medium" padding="medium" width="100%" gap="small">
-      <text size="xsmall" color="#94a3b8" weight="bold">{label}</text>
-      <text size="medium" color={color} weight="bold" overflow="ellipsis">{value}</text>
-    </vstack>
   );
 }
 
