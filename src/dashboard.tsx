@@ -1,5 +1,5 @@
 import { Devvit } from '@devvit/public-api';
-import type { EmberConfig, HeatLevel, SignalSnapshot } from './types.js';
+import type { AlertRecord, EmberConfig, HeatLevel, SignalSnapshot } from './types.js';
 
 const FLAME = '\u{1F525}';
 const GREEN = '\u{1F7E2}';
@@ -7,11 +7,16 @@ const YELLOW = '\u{1F7E1}';
 const ORANGE = '\u{1F7E0}';
 const RED = '\u{1F534}';
 
-const LEVEL_META: Record<HeatLevel, { emoji: string; label: string; bg: string; accent: string; soft: string }> = {
-  cool: { emoji: GREEN, label: 'All Clear', bg: '#123524', accent: '#22c55e', soft: '#163f2a' },
-  warming: { emoji: YELLOW, label: 'Warming Up', bg: '#4a3800', accent: '#facc15', soft: '#5f4600' },
-  hot: { emoji: ORANGE, label: 'Getting Hot', bg: '#7a2e00', accent: '#fb923c', soft: '#923900' },
-  ember: { emoji: RED, label: 'Act Now', bg: '#7a0000', accent: '#ef4444', soft: '#991b1b' },
+const LEVEL_META: Record<HeatLevel, { emoji: string; label: string; bg: string; accent: string }> = {
+  cool: { emoji: GREEN, label: 'All Clear', bg: '#123524', accent: '#22c55e' },
+  warming: { emoji: YELLOW, label: 'Warming Up', bg: '#4a3800', accent: '#facc15' },
+  hot: { emoji: ORANGE, label: 'Getting Hot', bg: '#7a2e00', accent: '#fb923c' },
+  ember: { emoji: RED, label: 'Act Now', bg: '#7a0000', accent: '#ef4444' },
+};
+
+type DashboardData = {
+  history?: SignalSnapshot[];
+  lastAlert?: AlertRecord | null;
 };
 
 type HeatmapSignal = {
@@ -32,7 +37,11 @@ const SIGNALS: HeatmapSignal[] = [
   { key: 'controversyCluster', label: 'Controversy', max: 10, color: '#DA70D6' },
 ];
 
-export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig): JSX.Element {
+export function renderDashboard(
+  snap: SignalSnapshot | null,
+  config: EmberConfig,
+  data: DashboardData = {},
+): JSX.Element {
   if (!snap) {
     return (
       <vstack alignment="middle center" padding="large" gap="medium" width="100%" height="100%" backgroundColor="#070b12">
@@ -45,51 +54,68 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
   }
 
   const meta = LEVEL_META[snap.level];
+  const primary = dominantSignal(snap);
   return (
     <vstack padding="small" gap="small" width="100%" height="100%" backgroundColor="#070b12">
       <hstack gap="none" width="100%">
-        <vstack width="5%" />
-        <vstack gap="small" width="90%" backgroundColor="#070b12">
+        <vstack width="4%" />
+        <vstack gap="small" width="92%" backgroundColor="#070b12">
           <hstack alignment="middle center" gap="small" width="100%">
             <vstack width="6px" height="24px" backgroundColor="#FF6B35" cornerRadius="full" />
             <vstack gap="none" width="100%">
               <text size="large" weight="bold" color="#FF6B35">EMBER</text>
-              <text size="xsmall" color="#94a3b8">Live community threat radar</text>
+              <text size="xsmall" color="#94a3b8">Community heat radar</text>
+            </vstack>
+            <text size="xsmall" color={meta.accent} weight="bold">{modeLabel(snap)}</text>
+          </hstack>
+
+          <hstack gap="small" width="100%">
+            <vstack backgroundColor={meta.bg} cornerRadius="large" padding="small" gap="small" width="35%">
+              <text size="xxlarge" weight="bold" color="#ffffff">{snap.total}</text>
+              <text size="xsmall" color="#e5e7eb">/100 Heat Score</text>
+              <text size="small" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
+              <text size="xsmall" color="#f8fafc">{alertDistance(snap, config)}</text>
+              <text size="xsmall" color="#cbd5e1">Primary: {primary}</text>
+            </vstack>
+
+            <vstack backgroundColor="#0f172a" cornerRadius="large" padding="small" gap="small" width="65%">
+              <hstack alignment="middle center" width="100%">
+                <text size="small" weight="bold" color="#e2e8f0">Signal Heatmap</text>
+                <spacer size="small" />
+                <text size="xsmall" color="#64748b">Mode: {modeLabel(snap)}</text>
+              </hstack>
+              {heatmapRow(SIGNALS[0], snap)}
+              {heatmapRow(SIGNALS[1], snap)}
+              {heatmapRow(SIGNALS[2], snap)}
+              {heatmapRow(SIGNALS[3], snap)}
+              {heatmapRow(SIGNALS[4], snap)}
             </vstack>
           </hstack>
 
-          <vstack backgroundColor={meta.bg} cornerRadius="large" padding="small" gap="small" width="100%">
-            <hstack alignment="middle center" gap="small" width="100%">
-              <text size="large" weight="bold" color="#ffffff">{snap.total}/100</text>
-              <text size="small" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
-            </hstack>
-            <text size="xsmall" color="#f8fafc">{statusLine(snap)}</text>
-            <hstack gap="none" width="100%" height="8px">
-              <vstack width={`${snap.total}%`} height="8px" backgroundColor="#ffffff" cornerRadius="full" />
-              <vstack width={`${100 - snap.total}%`} height="8px" backgroundColor="#334155" cornerRadius="full" />
-            </hstack>
-          </vstack>
+          <hstack gap="small" width="100%">
+            <vstack backgroundColor="#111827" cornerRadius="medium" padding="small" gap="small" width="62%">
+              <hstack alignment="middle center" width="100%">
+                <text size="xsmall" color="#94a3b8" weight="bold">Trend</text>
+                <spacer size="small" />
+                <text size="xsmall" color="#64748b">last scans</text>
+              </hstack>
+              {sparkline(data.history ?? [], snap)}
+            </vstack>
 
-          <vstack backgroundColor="#0f172a" cornerRadius="large" padding="small" gap="small" width="100%">
-            <hstack alignment="middle center" width="100%">
-              <text size="small" weight="bold" color="#e2e8f0">Signal Heatmap</text>
-              <spacer size="small" />
-              <text size="xsmall" color="#64748b">Risk: {dominantSignal(snap)}</text>
-            </hstack>
-            {heatmapRow(SIGNALS[0], snap)}
-            {heatmapRow(SIGNALS[1], snap)}
-            {heatmapRow(SIGNALS[2], snap)}
-            {heatmapRow(SIGNALS[3], snap)}
-            {heatmapRow(SIGNALS[4], snap)}
-          </vstack>
+            <vstack backgroundColor="#111827" cornerRadius="medium" padding="small" gap="small" width="38%">
+              <text size="xsmall" color={meta.accent} weight="bold">Ops</text>
+              <text size="xsmall" color="#cbd5e1">Last alert: {lastAlertText(data.lastAlert)}</text>
+              <text size="xsmall" color="#cbd5e1">Baseline: {baselineText(snap)}</text>
+            </vstack>
+          </hstack>
 
           <hstack alignment="middle center" width="100%">
             <text size="xsmall" color="#64748b">Updated {formatTime(snap.computedAt)}</text>
             <spacer size="medium" />
-            <text size="xsmall" color="#64748b">Threshold {config.alertThreshold} - {baselineText(snap)}</text>
+            <text size="xsmall" color="#64748b">Threshold {config.alertThreshold}</text>
           </hstack>
         </vstack>
-        <vstack width="5%" />
+        <vstack width="4%" />
       </hstack>
     </vstack>
   );
@@ -154,11 +180,79 @@ function heatCell(index: number, activeCells: number, color: string): JSX.Elemen
   );
 }
 
-function statusLine(snap: SignalSnapshot): string {
-  if (snap.total >= 75) return 'Multiple signals are elevated. Moderator action is recommended.';
-  if (snap.total >= 56) return 'Activity is heating up. Review active threads and reports.';
-  if (snap.total >= 31) return 'Early warning signals are present. Keep watch.';
-  return 'Normal activity. Ember is monitoring quietly.';
+function sparkline(history: SignalSnapshot[], snap: SignalSnapshot): JSX.Element {
+  const samples = normalizeHistory(history, snap);
+  return (
+    <hstack gap="small" alignment="middle center" width="100%">
+      {sparkCell(samples[0])}
+      {sparkCell(samples[1])}
+      {sparkCell(samples[2])}
+      {sparkCell(samples[3])}
+      {sparkCell(samples[4])}
+      {sparkCell(samples[5])}
+      {sparkCell(samples[6])}
+      {sparkCell(samples[7])}
+      <spacer size="small" />
+      <text size="xsmall" color="#94a3b8">{trendText(samples)}</text>
+    </hstack>
+  );
+}
+
+function sparkCell(score: number): JSX.Element {
+  return (
+    <vstack
+      width="16px"
+      height={sparkHeight(score)}
+      cornerRadius="small"
+      backgroundColor={scoreColor(score)}
+    />
+  );
+}
+
+function normalizeHistory(history: SignalSnapshot[], snap: SignalSnapshot): number[] {
+  const scores = history.map((entry) => entry.total).concat(snap.total).slice(-8);
+  while (scores.length < 8) scores.unshift(0);
+  return scores;
+}
+
+function trendText(scores: number[]): string {
+  const first = scores[0] ?? 0;
+  const last = scores[scores.length - 1] ?? 0;
+  if (last >= first + 10) return 'rising';
+  if (last <= first - 10) return 'cooling';
+  return 'steady';
+}
+
+function sparkHeight(score: number): '22px' | '18px' | '14px' | '10px' {
+  if (score >= 75) return '22px';
+  if (score >= 56) return '18px';
+  if (score >= 31) return '14px';
+  return '10px';
+}
+
+function scoreColor(score: number): string {
+  if (score >= 75) return '#ef4444';
+  if (score >= 56) return '#fb923c';
+  if (score >= 31) return '#facc15';
+  return '#1e293b';
+}
+
+function alertDistance(snap: SignalSnapshot, config: EmberConfig): string {
+  if (config.alertThreshold <= 0) return 'Alerts disabled';
+  if (snap.total >= config.alertThreshold) return 'Alert line reached';
+  return `+${config.alertThreshold - snap.total} heat to alert`;
+}
+
+function modeLabel(snap: SignalSnapshot): string {
+  if (snap.total >= 75) return 'Incident Mode';
+  if (snap.total >= 56) return 'Active Watch';
+  if (snap.total >= 31) return 'Early Warning';
+  return 'Quiet Watch';
+}
+
+function lastAlertText(lastAlert: AlertRecord | null | undefined): string {
+  if (!lastAlert) return 'None';
+  return formatTime(lastAlert.firedAt);
 }
 
 function dominantSignal(snap: SignalSnapshot): string {

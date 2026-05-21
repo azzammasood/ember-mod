@@ -4,7 +4,15 @@ import type { Context } from '@devvit/public-api';
 import { maybeSendAlert } from './alerter.js';
 import { renderDashboard, renderLoadingDashboard, renderSafeDashboardFallback } from './dashboard.js';
 import { computeHeat } from './heatEngine.js';
-import { getConfig, getSnapshot, getWindow, saveSnapshot, saveWindow } from './signalStore.js';
+import {
+  getConfig,
+  getLastAlert,
+  getSnapshot,
+  getSnapshotHistory,
+  getWindow,
+  saveSnapshot,
+  saveWindow,
+} from './signalStore.js';
 import type { EmberConfig, EmberSettings, RollingWindow, SignalSnapshot } from './types.js';
 
 const SCAN_JOB = 'ember-scan';
@@ -170,12 +178,14 @@ Devvit.addMenuItem({
     try {
       const snap = await getSnapshot(context.kvStore);
       const config = await loadConfig(context);
+      const history = await getSnapshotHistory(context.kvStore);
+      const lastAlert = await getLastAlert(context.kvStore);
       const subreddit = await context.reddit.getCurrentSubreddit();
       try {
         await context.reddit.submitPost({
           title: `Ember Dashboard - ${subreddit.name}`,
           subredditName: subreddit.name,
-          preview: renderDashboard(snap, config),
+          preview: renderDashboard(snap, config, { history, lastAlert }),
           textFallback: { text: 'Ember dashboard requires the Reddit app or web client with Devvit custom posts enabled.' },
         });
       } catch (previewError) {
@@ -220,11 +230,19 @@ Devvit.addCustomPostType({
     const [configState] = context.useState(async (): Promise<any> => {
       return await loadConfig(context);
     });
+    const [historyState] = context.useState(async (): Promise<any> => {
+      return await getSnapshotHistory(context.kvStore);
+    });
+    const [lastAlertState] = context.useState(async (): Promise<any> => {
+      return await getLastAlert(context.kvStore);
+    });
 
     const snap = snapState as SignalSnapshot | null;
     const config = configState as EmberConfig | null;
+    const history = historyState as SignalSnapshot[];
+    const lastAlert = lastAlertState as any;
     if (!config) return renderLoadingDashboard();
-    return renderDashboard(snap, config);
+    return renderDashboard(snap, config, { history, lastAlert });
   },
 });
 

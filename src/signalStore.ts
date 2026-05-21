@@ -2,6 +2,7 @@ import type { AlertRecord, EmberConfig, EmberSettings, RollingWindow, SignalSnap
 
 const WINDOW_KEY = 'ember:window';
 const SNAPSHOT_KEY = 'ember:snapshot';
+const SNAPSHOT_HISTORY_KEY = 'ember:snapshotHistory';
 const LAST_ALERT_KEY = 'ember:lastAlert';
 
 const HOUR = 60 * 60 * 1000;
@@ -58,8 +59,22 @@ export async function getSnapshot(kvStore: any): Promise<SignalSnapshot | null> 
 export async function saveSnapshot(kvStore: any, snap: SignalSnapshot): Promise<void> {
   try {
     await kvStore.put(SNAPSHOT_KEY, JSON.stringify(snap));
+    await appendSnapshotHistory(kvStore, snap);
   } catch (error) {
     console.error('[Ember] signalStore.saveSnapshot failed:', error);
+  }
+}
+
+export async function getSnapshotHistory(kvStore: any): Promise<SignalSnapshot[]> {
+  try {
+    const raw = await kvStore.get(SNAPSHOT_HISTORY_KEY);
+    if (typeof raw !== 'string') return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isSignalSnapshot).slice(-12);
+  } catch (error) {
+    console.error('[Ember] signalStore.getSnapshotHistory failed:', error);
+    return [];
   }
 }
 
@@ -115,6 +130,26 @@ function trimSince(values: number[], minTimestamp: number): number[] {
   return ensureNumberArray(values).filter((timestamp) => timestamp >= minTimestamp);
 }
 
+async function appendSnapshotHistory(kvStore: any, snap: SignalSnapshot): Promise<void> {
+  try {
+    const history = await getSnapshotHistory(kvStore);
+    const next = [...history, snap].slice(-12);
+    await kvStore.put(SNAPSHOT_HISTORY_KEY, JSON.stringify(next));
+  } catch (error) {
+    console.error('[Ember] signalStore.appendSnapshotHistory failed:', error);
+  }
+}
+
+function isSignalSnapshot(value: unknown): value is SignalSnapshot {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<SignalSnapshot>;
+  return (
+    typeof candidate.total === 'number' &&
+    typeof candidate.computedAt === 'number' &&
+    typeof candidate.level === 'string'
+  );
+}
+
 function ensureNumberArray(value: unknown): number[] {
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry));
@@ -124,4 +159,3 @@ function clampNumber(value: number | undefined, fallback: number, min: number, m
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
   return Math.min(max, Math.max(min, Math.floor(value)));
 }
-
