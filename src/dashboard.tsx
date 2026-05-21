@@ -46,10 +46,10 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
 
   const meta = LEVEL_META[snap.level];
   return (
-    <vstack padding="small" gap="none" width="100%" height="100%" backgroundColor="#070b12">
-      <vstack padding="medium" gap="small" width="96%" height="100%" backgroundColor="#070b12">
+    <vstack alignment="top center" padding="none" gap="none" width="100%" height="100%" backgroundColor="#070b12">
+      <vstack padding="small" gap="small" width="88%" height="100%" backgroundColor="#070b12">
         <hstack alignment="middle center" gap="small" width="100%">
-          <text size="medium">{FLAME}</text>
+          <vstack width="8px" height="28px" backgroundColor="#FF6B35" cornerRadius="full" />
           <vstack gap="none" width="100%">
             <text size="large" weight="bold" color="#FF6B35">EMBER</text>
             <text size="xsmall" color="#94a3b8">Live community threat radar</text>
@@ -57,7 +57,7 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
         </hstack>
 
         <vstack backgroundColor={meta.bg} cornerRadius="large" padding="medium" gap="small" width="100%">
-          <hstack alignment="middle center" gap="medium" width="100%">
+          <hstack alignment="middle center" gap="small" width="100%">
             <text size="xlarge" weight="bold" color="#ffffff">{snap.total}/100</text>
             <text size="medium" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
           </hstack>
