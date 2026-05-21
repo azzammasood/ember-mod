@@ -46,45 +46,52 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
 
   const meta = LEVEL_META[snap.level];
   return (
-    <vstack padding="medium" gap="small" width="100%" backgroundColor="#070b12">
-      <hstack alignment="middle center" gap="small" width="100%">
-        <text size="large">{FLAME}</text>
-        <vstack gap="none" width="100%">
-          <text size="xlarge" weight="bold" color="#FF6B35">EMBER</text>
-          <text size="xsmall" color="#94a3b8">Live community threat radar</text>
+    <vstack padding="small" gap="none" width="100%" height="100%" backgroundColor="#070b12">
+      <vstack padding="medium" gap="small" width="96%" height="100%" backgroundColor="#070b12">
+        <hstack alignment="middle center" gap="small" width="100%">
+          <text size="medium">{FLAME}</text>
+          <vstack gap="none" width="100%">
+            <text size="large" weight="bold" color="#FF6B35">EMBER</text>
+            <text size="xsmall" color="#94a3b8">Live community threat radar</text>
+          </vstack>
+        </hstack>
+
+        <vstack backgroundColor={meta.bg} cornerRadius="large" padding="medium" gap="small" width="100%">
+          <hstack alignment="middle center" gap="medium" width="100%">
+            <text size="xlarge" weight="bold" color="#ffffff">{snap.total}/100</text>
+            <text size="medium" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
+          </hstack>
+          <text size="xsmall" color="#f8fafc">{statusLine(snap)}</text>
+          <hstack gap="none" width="100%" height="10px">
+            <vstack width={`${snap.total}%`} height="10px" backgroundColor="#ffffff" cornerRadius="full" />
+            <vstack width={`${100 - snap.total}%`} height="10px" backgroundColor="#334155" cornerRadius="full" />
+          </hstack>
         </vstack>
-      </hstack>
 
-      <vstack backgroundColor={meta.bg} cornerRadius="large" padding="medium" gap="small" width="100%">
-        <hstack alignment="middle center" gap="medium" width="100%">
-          <text size="xlarge" weight="bold" color="#ffffff">{snap.total}/100</text>
-          <text size="medium" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
-        </hstack>
-        <text size="xsmall" color="#f8fafc">{statusLine(snap)}</text>
-        <hstack gap="none" width="100%" height="10px">
-          <vstack width={`${snap.total}%`} height="10px" backgroundColor="#ffffff" cornerRadius="full" />
-          <vstack width={`${100 - snap.total}%`} height="10px" backgroundColor="#334155" cornerRadius="full" />
-        </hstack>
-      </vstack>
+        <vstack backgroundColor="#0f172a" cornerRadius="large" padding="small" gap="small" width="100%">
+          <hstack alignment="middle center" width="100%">
+            <text size="small" weight="bold" color="#e2e8f0">Signal Heatmap</text>
+            <spacer size="small" />
+            <text size="xsmall" color="#64748b">Risk: {dominantSignal(snap)}</text>
+          </hstack>
+          {heatmapRow(SIGNALS[0], snap)}
+          {heatmapRow(SIGNALS[1], snap)}
+          {heatmapRow(SIGNALS[2], snap)}
+          {heatmapRow(SIGNALS[3], snap)}
+          {heatmapRow(SIGNALS[4], snap)}
+        </vstack>
 
-      <vstack backgroundColor="#0f172a" cornerRadius="large" padding="small" gap="small" width="100%">
+        <vstack backgroundColor="#111827" cornerRadius="medium" padding="small" gap="small" width="100%">
+          <text size="xsmall" color={meta.accent} weight="bold">Suggested action</text>
+          <text size="xsmall" color="#cbd5e1">{recommendedAction(snap)}</text>
+        </vstack>
+
         <hstack alignment="middle center" width="100%">
-          <text size="small" weight="bold" color="#e2e8f0">Signal Heatmap</text>
-          <spacer size="small" />
-          <text size="xsmall" color="#64748b">{dominantSignal(snap)}</text>
+          <text size="xsmall" color="#64748b">Updated {formatTime(snap.computedAt)}</text>
+          <spacer size="medium" />
+          <text size="xsmall" color="#64748b">Threshold {config.alertThreshold} - {baselineText(snap)}</text>
         </hstack>
-        {heatmapRow(SIGNALS[0], snap)}
-        {heatmapRow(SIGNALS[1], snap)}
-        {heatmapRow(SIGNALS[2], snap)}
-        {heatmapRow(SIGNALS[3], snap)}
-        {heatmapRow(SIGNALS[4], snap)}
       </vstack>
-
-      <hstack alignment="middle center" width="100%">
-        <text size="xsmall" color="#64748b">Updated {formatTime(snap.computedAt)}</text>
-        <spacer size="medium" />
-        <text size="xsmall" color="#64748b">Threshold {config.alertThreshold} - {baselineText(snap)}</text>
-      </hstack>
     </vstack>
   );
 }
@@ -143,6 +150,13 @@ function statusLine(snap: SignalSnapshot): string {
   if (snap.total >= 56) return 'Activity is heating up. Review active threads and reports.';
   if (snap.total >= 31) return 'Early warning signals are present. Keep watch.';
   return 'Normal activity. Ember is monitoring quietly.';
+}
+
+function recommendedAction(snap: SignalSnapshot): string {
+  if (snap.total >= 75) return 'Lock volatile threads, review reports, and alert the mod team.';
+  if (snap.total >= 56) return 'Review active reports and watch fast-moving threads.';
+  if (snap.total >= 31) return 'Keep watching. Early warning signals are present.';
+  return 'No action needed. Ember will alert mods if the heat rises.';
 }
 
 function dominantSignal(snap: SignalSnapshot): string {
