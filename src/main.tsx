@@ -2,7 +2,7 @@ import { Devvit } from '@devvit/public-api';
 import type { Context } from '@devvit/public-api';
 
 import { maybeSendAlert } from './alerter.js';
-import { renderDashboard, renderLoadingDashboard } from './dashboard.js';
+import { renderDashboard, renderLoadingDashboard, renderSafeDashboardFallback } from './dashboard.js';
 import { computeHeat } from './heatEngine.js';
 import { getConfig, getSnapshot, getWindow, saveSnapshot, saveWindow } from './signalStore.js';
 import type { EmberConfig, EmberSettings, RollingWindow, SignalSnapshot } from './types.js';
@@ -171,12 +171,22 @@ Devvit.addMenuItem({
       const snap = await getSnapshot(context.kvStore);
       const config = await loadConfig(context);
       const subreddit = await context.reddit.getCurrentSubreddit();
-      await context.reddit.submitPost({
-        title: `Ember Dashboard - ${subreddit.name}`,
-        subredditName: subreddit.name,
-        preview: renderDashboard(snap, config),
-        textFallback: { text: 'Ember dashboard requires the Reddit app or web client with Devvit custom posts enabled.' },
-      });
+      try {
+        await context.reddit.submitPost({
+          title: `Ember Dashboard - ${subreddit.name}`,
+          subredditName: subreddit.name,
+          preview: renderDashboard(snap, config),
+          textFallback: { text: 'Ember dashboard requires the Reddit app or web client with Devvit custom posts enabled.' },
+        });
+      } catch (previewError) {
+        console.error('[Ember] rich dashboard preview failed, trying fallback:', previewError);
+        await context.reddit.submitPost({
+          title: `Ember Dashboard - ${subreddit.name}`,
+          subredditName: subreddit.name,
+          preview: renderSafeDashboardFallback(),
+          textFallback: { text: 'Ember dashboard is loading.' },
+        });
+      }
       context.ui.showToast('Ember dashboard created');
     } catch (error) {
       console.error('[Ember] dashboard menu action failed:', error);

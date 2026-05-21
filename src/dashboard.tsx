@@ -46,8 +46,8 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
 
   const meta = LEVEL_META[snap.level];
   return (
-    <vstack alignment="top center" padding="none" gap="none" width="100%" height="100%" backgroundColor="#070b12">
-      <vstack padding="small" gap="small" width="88%" height="100%" backgroundColor="#070b12">
+    <vstack padding="medium" gap="small" width="100%" height="100%" backgroundColor="#070b12">
+      <vstack padding="small" gap="small" width="92%" backgroundColor="#070b12">
         <hstack alignment="middle center" gap="small" width="100%">
           <vstack width="8px" height="28px" backgroundColor="#FF6B35" cornerRadius="full" />
           <vstack gap="none" width="100%">
@@ -101,6 +101,16 @@ export function renderLoadingDashboard(): JSX.Element {
     <vstack alignment="middle center" padding="large" gap="medium" width="100%" height="100%" backgroundColor="#070b12">
       <text size="xxlarge" weight="bold" color="#FF6B35">{FLAME} EMBER</text>
       <text size="medium" color="#9ca3af">Loading heat data...</text>
+    </vstack>
+  );
+}
+
+export function renderSafeDashboardFallback(): JSX.Element {
+  return (
+    <vstack padding="large" gap="medium" width="100%" height="100%" backgroundColor="#070b12">
+      <text size="xlarge" weight="bold" color="#FF6B35">EMBER</text>
+      <text size="medium" color="#e5e7eb">Community Heat Monitor</text>
+      <text size="small" color="#94a3b8">Dashboard data is loading. Use Check Heat Now to refresh the latest score.</text>
     </vstack>
   );
 }
