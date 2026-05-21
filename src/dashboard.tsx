@@ -53,20 +53,17 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
           <text size="xxlarge" weight="bold" color="#FF6B35">EMBER</text>
           <text size="xsmall" color="#94a3b8">Live community threat radar</text>
         </vstack>
-        <vstack backgroundColor={meta.soft} cornerRadius="full" padding="small">
-          <text size="xsmall" color="#ffffff" weight="bold">{meta.emoji} {snap.level.toUpperCase()}</text>
-        </vstack>
       </hstack>
 
-      <vstack backgroundColor={meta.bg} cornerRadius="large" padding="large" gap="medium" width="100%">
-        <hstack alignment="middle center" gap="medium" width="100%">
+      <vstack backgroundColor={meta.bg} cornerRadius="large" padding="medium" gap="small" width="100%">
+        <hstack alignment="middle center" gap="small" width="100%">
           <vstack gap="none">
-            <text size="xxlarge" weight="bold" color="#ffffff">{snap.total}</text>
-            <text size="small" color="#e5e7eb">/ 100 heat score</text>
+            <text size="xlarge" weight="bold" color="#ffffff">{snap.total}/100</text>
+            <text size="xsmall" color="#e5e7eb">Heat Score</text>
           </vstack>
           <vstack gap="small" width="100%">
-            <text size="large" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
-            <text size="small" color="#f8fafc">{statusLine(snap)}</text>
+            <text size="medium" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
+            <text size="xsmall" color="#f8fafc">{statusLine(snap)}</text>
             <hstack gap="none" width="100%" height="12px">
               <vstack width={`${snap.total}%`} height="12px" backgroundColor="#ffffff" cornerRadius="full" />
               <vstack width={`${100 - snap.total}%`} height="12px" backgroundColor="#334155" cornerRadius="full" />
@@ -78,8 +75,6 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
       <vstack backgroundColor="#0f172a" cornerRadius="large" padding="medium" gap="small" width="100%">
         <hstack alignment="middle center" width="100%">
           <text size="small" weight="bold" color="#e2e8f0">Signal Heatmap</text>
-          <spacer size="medium" />
-          <text size="xsmall" color="#64748b">cool to critical</text>
         </hstack>
         {heatmapRow(SIGNALS[0], snap)}
         {heatmapRow(SIGNALS[1], snap)}
@@ -94,16 +89,8 @@ export function renderDashboard(snap: SignalSnapshot | null, config: EmberConfig
       </hstack>
 
       <hstack gap="medium" width="100%">
-        {signalCard('Reports', snap.reportSpike, 30, '#FF4444')}
-        {signalCard('Removals', snap.removalSurge, 25, '#FF8C00')}
-      </hstack>
-      <hstack gap="medium" width="100%">
-        {signalCard('New Accts', snap.newAccountFlood, 20, '#FFD700')}
-        {signalCard('Velocity', snap.velocitySpike, 15, '#00BFFF')}
-      </hstack>
-      <hstack gap="medium" width="100%">
-        {signalCard('Controversy', snap.controversyCluster, 10, '#DA70D6')}
         {miniMetric('Alert Line', `${config.alertThreshold}/100`, '#f97316')}
+        {miniMetric('Level', snap.level.toUpperCase(), meta.accent)}
       </hstack>
 
       <hstack alignment="middle center" width="100%">
@@ -161,23 +148,6 @@ function heatCell(index: number, activeCells: number, color: string): JSX.Elemen
       cornerRadius="small"
       backgroundColor={active ? color : '#1e293b'}
     />
-  );
-}
-
-function signalCard(name: string, score: number, max: number, color: string): JSX.Element {
-  const pct = Math.max(0, Math.min(100, Math.round((score / max) * 100)));
-  return (
-    <vstack backgroundColor="#111827" cornerRadius="medium" padding="medium" width="100%" gap="small">
-      <hstack alignment="middle center" width="100%">
-        <text size="xsmall" color="#9ca3af" weight="bold" overflow="ellipsis">{name}</text>
-        <spacer size="medium" />
-        <text size="xsmall" color="#d1d5db">{score}/{max}</text>
-      </hstack>
-      <hstack gap="none" width="100%" height="8px" backgroundColor="#374151" cornerRadius="full">
-        <vstack width={`${pct}%`} height="8px" backgroundColor={color} cornerRadius="full" />
-        <vstack width={`${100 - pct}%`} height="8px" backgroundColor="#374151" cornerRadius="full" />
-      </hstack>
-    </vstack>
   );
 }
 
