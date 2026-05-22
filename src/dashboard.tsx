@@ -27,7 +27,7 @@ type DashboardData = {
   onCloseChooser?: () => void;
 };
 
-export type DashboardTheme = 'ember' | 'aurora' | 'contrast';
+export type DashboardTheme = 'ember' | 'aurora' | 'contrast' | 'ocean' | 'violet' | 'solar';
 export type DashboardPanel = 'trend' | 'ops' | 'actions';
 export type DashboardChooser = 'none' | 'theme' | 'panel';
 
@@ -115,16 +115,16 @@ export function renderDashboard(
             </vstack>
           </hstack>
 
-          <hstack gap="small" width="100%">
-            {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, meta.accent, palette, data)}
-          </hstack>
-
           <hstack alignment="middle center" gap="small" width="100%">
             <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onThemePress}>Theme</button>
-            <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
+            <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
             <text size="xsmall" color={palette.muted}>Updated {formatTime(snap.computedAt)}</text>
             <spacer size="medium" />
             <text size="xsmall" color={palette.muted}>Threshold {config.alertThreshold}</text>
+          </hstack>
+
+          <hstack gap="small" width="100%">
+            {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, meta.accent, palette, data)}
           </hstack>
         </vstack>
         <vstack width="5%" />
@@ -267,13 +267,14 @@ function chooserPanel(
 ): JSX.Element {
   if (chooser === 'theme') {
     return (
-      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-        <text alignment="center" size="xsmall" color={accent} weight="bold">Choose Theme</text>
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="none" width="100%">
         <hstack alignment="middle center" gap="small" width="100%">
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('ember')}>Ember</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('aurora')}>Aurora</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('contrast')}>Contrast</button>
-          <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('ocean')}>Ocean</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('violet')}>Violet</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('solar')}>Solar</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('contrast')}>Mono</button>
         </hstack>
       </vstack>
     );
@@ -281,8 +282,7 @@ function chooserPanel(
 
   if (chooser === 'panel') {
     return (
-      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-        <text alignment="center" size="xsmall" color={accent} weight="bold">Choose Panel</text>
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="none" width="100%">
         <hstack alignment="middle center" gap="small" width="100%">
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('trend')}>Trend</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('ops')}>Ops</button>
@@ -383,6 +383,39 @@ function themePalette(theme: DashboardTheme): DashboardPalette {
     };
   }
 
+  if (theme === 'ocean') {
+    return {
+      bg: '#04111f',
+      panel: '#0b2545',
+      card: '#0f1d33',
+      muted: '#7dd3fc',
+      text: '#e0f2fe',
+      accent: '#38bdf8',
+    };
+  }
+
+  if (theme === 'violet') {
+    return {
+      bg: '#12091f',
+      panel: '#251044',
+      card: '#1c1235',
+      muted: '#c4b5fd',
+      text: '#ede9fe',
+      accent: '#a78bfa',
+    };
+  }
+
+  if (theme === 'solar') {
+    return {
+      bg: '#181008',
+      panel: '#3a2207',
+      card: '#241609',
+      muted: '#fbbf24',
+      text: '#fff7ed',
+      accent: '#f97316',
+    };
+  }
+
   if (theme === 'contrast') {
     return {
       bg: '#030712',
@@ -406,7 +439,10 @@ function themePalette(theme: DashboardTheme): DashboardPalette {
 
 export function nextDashboardTheme(theme: DashboardTheme): DashboardTheme {
   if (theme === 'ember') return 'aurora';
-  if (theme === 'aurora') return 'contrast';
+  if (theme === 'aurora') return 'ocean';
+  if (theme === 'ocean') return 'violet';
+  if (theme === 'violet') return 'solar';
+  if (theme === 'solar') return 'contrast';
   return 'ember';
 }
 

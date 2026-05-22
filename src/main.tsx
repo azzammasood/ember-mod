@@ -186,6 +186,7 @@ Devvit.addMenuItem({
       const history = await getSnapshotHistory(context.kvStore);
       const lastAlert = await getLastAlert(context.kvStore);
       const subreddit = await context.reddit.getCurrentSubreddit();
+      context.ui.showToast('Creating Ember dashboard...');
       try {
         await context.reddit.submitPost({
           title: `Ember Dashboard - ${subreddit.name}`,
@@ -202,7 +203,7 @@ Devvit.addMenuItem({
           textFallback: { text: 'Ember dashboard is loading.' },
         });
       }
-      context.ui.showToast('Ember dashboard created');
+      context.ui.showToast('Dashboard queued - refresh posts in a few seconds.');
     } catch (error) {
       console.error('[Ember] dashboard menu action failed:', error);
       context.ui.showToast('Ember could not create the dashboard.');
