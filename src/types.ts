@@ -26,6 +26,16 @@ export interface AlertRecord {
   snapshot: SignalSnapshot;
 }
 
+export interface ActivityStats {
+  comments10m: number;
+  comments30m: number;
+  comments24h: number;
+  removals30m: number;
+  reports60m: number;
+  newAccounts20m: number;
+  controversial60m: number;
+}
+
 export interface EmberConfig {
   alertThreshold: number;
   alertCooldownMinutes: number;
@@ -39,4 +49,3 @@ export type EmberSettings = {
   'scan-interval-minutes'?: number;
   'mute-alerts'?: boolean;
 };
-

@@ -18,7 +18,7 @@ import {
   saveSnapshot,
   saveWindow,
 } from './signalStore.js';
-import type { EmberConfig, EmberSettings, RollingWindow, SignalSnapshot } from './types.js';
+import type { ActivityStats, EmberConfig, EmberSettings, RollingWindow, SignalSnapshot } from './types.js';
 
 const SCAN_JOB = 'ember-scan';
 const DAILY_RESET_JOB = 'ember-daily-reset';
@@ -185,13 +185,14 @@ Devvit.addMenuItem({
       const config = await loadConfig(context);
       const history = await getSnapshotHistory(context.kvStore);
       const lastAlert = await getLastAlert(context.kvStore);
+      const activity = computeActivityStats(await getWindow(context.kvStore));
       const subreddit = await context.reddit.getCurrentSubreddit();
       context.ui.showToast('Creating Ember dashboard...');
       try {
         await context.reddit.submitPost({
           title: `Ember Dashboard - ${subreddit.name}`,
           subredditName: subreddit.name,
-          preview: renderDashboard(snap, config, { history, lastAlert }),
+          preview: renderDashboard(snap, config, { history, lastAlert, activity }),
           textFallback: { text: 'Ember dashboard requires the Reddit app or web client with Devvit custom posts enabled.' },
         });
       } catch (previewError) {
@@ -242,6 +243,9 @@ Devvit.addCustomPostType({
     const [lastAlertState, setLastAlertState] = context.useState(async (): Promise<any> => {
       return await getLastAlert(context.kvStore);
     });
+    const [activityState, setActivityState] = context.useState(async (): Promise<any> => {
+      return computeActivityStats(await getWindow(context.kvStore));
+    });
     const [theme, setTheme] = context.useState<DashboardTheme>('ember');
     const [panel, setPanel] = context.useState<DashboardPanel>('trend');
     const [chooser, setChooser] = context.useState<DashboardChooser>('none');
@@ -250,10 +254,12 @@ Devvit.addCustomPostType({
     const config = configState as EmberConfig | null;
     const history = historyState as SignalSnapshot[];
     const lastAlert = lastAlertState as any;
+    const activity = activityState as ActivityStats;
     if (!config) return renderLoadingDashboard();
     return renderDashboard(snap, config, {
       history,
       lastAlert,
+      activity,
       theme,
       panel,
       chooser,
@@ -266,6 +272,7 @@ Devvit.addCustomPostType({
         setConfigState(await loadConfig(context));
         setHistoryState(await getSnapshotHistory(context.kvStore));
         setLastAlertState(await getLastAlert(context.kvStore));
+        setActivityState(computeActivityStats(await getWindow(context.kvStore)));
       },
       onChooseTheme: (nextTheme) => {
         setTheme(nextTheme);
@@ -420,6 +427,23 @@ function emptyRuntimeWindow(): RollingWindow {
     newAccountComments: [],
     controversialPosts: [],
   };
+}
+
+function computeActivityStats(window: RollingWindow): ActivityStats {
+  const now = Date.now();
+  return {
+    comments10m: countSince(window.commentTimestamps, now - 10 * 60 * 1000),
+    comments30m: countSince(window.commentTimestamps, now - 30 * 60 * 1000),
+    comments24h: countSince(window.commentTimestamps, now - DAY),
+    removals30m: countSince(window.removalTimestamps, now - 30 * 60 * 1000),
+    reports60m: countSince(window.reportTimestamps, now - 60 * 60 * 1000),
+    newAccounts20m: countSince(window.newAccountComments, now - 20 * 60 * 1000),
+    controversial60m: countSince(window.controversialPosts, now - 60 * 60 * 1000),
+  };
+}
+
+function countSince(timestamps: number[], since: number): number {
+  return timestamps.filter((timestamp) => timestamp >= since).length;
 }
 
 export default Devvit;

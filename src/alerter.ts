@@ -58,23 +58,29 @@ function formatAlertBody(snap: SignalSnapshot): string {
   const meta = LEVEL_META[snap.level];
   return [
     `${FLAME} **Ember Heat Alert**`,
-    '-------------------------',
+    '',
+    '---',
     '',
     `**Heat Score: ${snap.total}/100** - ${meta.emoji} ${meta.label}`,
+    '',
     `Detected at: ${new Date(snap.computedAt).toUTCString()}`,
     '',
     '**Signal Breakdown:**',
-    `${CHART} Report spike: ${snap.reportSpike}/30 pts`,
-    `${TRASH} Removal surge: ${snap.removalSurge}/25 pts`,
-    `${USER} New account flood: ${snap.newAccountFlood}/20 pts`,
-    `${BOLT} Velocity spike: ${snap.velocitySpike}/15 pts`,
-    `${SWORDS} Controversy cluster: ${snap.controversyCluster}/10 pts`,
+    '',
+    `- ${CHART} Report spike: ${snap.reportSpike}/30 pts`,
+    `- ${TRASH} Removal surge: ${snap.removalSurge}/25 pts`,
+    `- ${USER} New account flood: ${snap.newAccountFlood}/20 pts`,
+    `- ${BOLT} Velocity spike: ${snap.velocitySpike}/15 pts`,
+    `- ${SWORDS} Controversy cluster: ${snap.controversyCluster}/10 pts`,
     '',
     '**Suggested actions:**',
+    '',
     suggestedActions(snap.total),
     '',
-    '-------------------------',
+    '---',
+    '',
     '*Ember - spots the spark before your community catches fire.*',
+    '',
     '*Adjust threshold in mod settings: Mod Tools > Apps > Ember*',
   ].join('\n');
 }
@@ -96,5 +102,8 @@ function suggestedActions(total: number): string {
     return '- No action needed yet - just a heads up';
   }
 
-  return '- No action needed.';
+  return [
+    '- Alert threshold was crossed, but the heat level is still Cool.',
+    '- No action needed unless this is a deliberate test threshold.',
+  ].join('\n');
 }

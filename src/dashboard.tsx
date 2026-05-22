@@ -1,5 +1,5 @@
 import { Devvit } from '@devvit/public-api';
-import type { AlertRecord, EmberConfig, HeatLevel, SignalSnapshot } from './types.js';
+import type { ActivityStats, AlertRecord, EmberConfig, HeatLevel, SignalSnapshot } from './types.js';
 
 const FLAME = '\u{1F525}';
 const GREEN = '\u{1F7E2}';
@@ -17,6 +17,7 @@ const LEVEL_META: Record<HeatLevel, { emoji: string; label: string; bg: string; 
 type DashboardData = {
   history?: SignalSnapshot[];
   lastAlert?: AlertRecord | null;
+  activity?: ActivityStats;
   theme?: DashboardTheme;
   panel?: DashboardPanel;
   chooser?: DashboardChooser;
@@ -78,6 +79,7 @@ export function renderDashboard(
 
   const meta = LEVEL_META[snap.level];
   const primary = dominantSignal(snap);
+  const activity = data.activity ?? emptyActivityStats();
   const theme = data.theme ?? 'ember';
   const panel = data.panel ?? 'trend';
   const chooser = data.chooser ?? 'none';
@@ -88,7 +90,7 @@ export function renderDashboard(
   }
 
   if (chooser === 'settings') {
-    return settingsPanel(snap, config, data.lastAlert, palette, data);
+    return settingsPanel(snap, config, data.lastAlert, activity, palette, data);
   }
 
   return (
@@ -137,7 +139,7 @@ export function renderDashboard(
           </hstack>
 
           <hstack gap="small" width="100%">
-            {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, meta.accent, palette, data)}
+            {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, activity, meta.accent, palette, data)}
           </hstack>
         </vstack>
         <vstack width="5%" />
@@ -208,7 +210,7 @@ function heatCell(index: number, activeCells: number, color: string): JSX.Elemen
 function sparkline(history: SignalSnapshot[], snap: SignalSnapshot): JSX.Element {
   const samples = normalizeHistory(history, snap);
   return (
-    <hstack gap="small" alignment="middle center" width="100%">
+    <hstack gap="small" alignment="middle center" width="220px">
       {sparkCell(samples[0])}
       {sparkCell(samples[1])}
       {sparkCell(samples[2])}
@@ -239,6 +241,7 @@ function detailPanel(
   snap: SignalSnapshot,
   history: SignalSnapshot[],
   lastAlert: AlertRecord | null | undefined,
+  activity: ActivityStats,
   accent: string,
   palette: DashboardPalette,
 ): JSX.Element {
@@ -252,6 +255,9 @@ function detailPanel(
         <spacer size="small" />
         <text size="xsmall" color={palette.muted}>Baseline</text>
         <text size="small" color={palette.text} weight="bold">{baselineText(snap)}</text>
+        <spacer size="small" />
+        <text size="xsmall" color={palette.muted}>Comments 30m</text>
+        <text size="small" color={palette.text} weight="bold">{activity.comments30m}</text>
       </hstack>
     );
   }
@@ -269,15 +275,24 @@ function detailPanel(
     return (
       <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
         <text alignment="center" size="xsmall" color={accent} weight="bold">Score Explanation</text>
-        <text alignment="center" size="xsmall" color={palette.text}>{scoreExplanation(snap)}</text>
+        <text alignment="center" size="xsmall" color={palette.text}>{scoreExplanation(snap, activity)}</text>
       </vstack>
     );
   }
 
   return (
     <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-      <text alignment="center" size="xsmall" color={accent} weight="bold">Trend - last scans</text>
-      {sparkline(history, snap)}
+      <hstack alignment="middle center" gap="small" width="100%">
+        <text size="xsmall" color={accent} weight="bold">Activity</text>
+        <text size="xsmall" color={palette.muted}>10m</text>
+        <text size="small" color={palette.text} weight="bold">{activity.comments10m}</text>
+        <text size="xsmall" color={palette.muted}>30m</text>
+        <text size="small" color={palette.text} weight="bold">{activity.comments30m}</text>
+        <text size="xsmall" color={palette.muted}>Removed</text>
+        <text size="small" color={palette.text} weight="bold">{activity.removals30m}</text>
+        <spacer size="small" />
+        {sparkline(history, snap)}
+      </hstack>
     </vstack>
   );
 }
@@ -288,6 +303,7 @@ function chooserPanel(
   panel: DashboardPanel,
   history: SignalSnapshot[],
   lastAlert: AlertRecord | null | undefined,
+  activity: ActivityStats,
   accent: string,
   palette: DashboardPalette,
   data: DashboardData,
@@ -306,7 +322,7 @@ function chooserPanel(
     );
   }
 
-  return detailPanel(panel, snap, history, lastAlert, accent, palette);
+  return detailPanel(panel, snap, history, lastAlert, activity, accent, palette);
 }
 
 function themePanel(palette: DashboardPalette, data: DashboardData): JSX.Element {
@@ -352,6 +368,7 @@ function settingsPanel(
   snap: SignalSnapshot,
   config: EmberConfig,
   lastAlert: AlertRecord | null | undefined,
+  activity: ActivityStats,
   palette: DashboardPalette,
   data: DashboardData,
 ): JSX.Element {
@@ -373,6 +390,13 @@ function settingsPanel(
         {settingCard('Threshold', `${config.alertThreshold}`, palette)}
         {settingCard('Cooldown', `${config.alertCooldownMinutes} min`, palette)}
         {settingCard('Scan', `${config.scanIntervalMinutes} min`, palette)}
+      </hstack>
+
+      <hstack gap="small" width="100%">
+        {settingCard('Comments 30m', `${activity.comments30m}`, palette)}
+        {settingCard('New Accts 20m', `${activity.newAccounts20m}`, palette)}
+        {settingCard('Removals 30m', `${activity.removals30m}`, palette)}
+        {settingCard('Reports 60m', `${activity.reports60m}`, palette)}
       </hstack>
 
       <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
@@ -451,16 +475,20 @@ function recommendedAction(snap: SignalSnapshot): string {
   return 'No action needed. Ember will alert mods if heat rises.';
 }
 
-function scoreExplanation(snap: SignalSnapshot): string {
+function scoreExplanation(snap: SignalSnapshot, activity: ActivityStats): string {
   const active = SIGNALS
     .filter((signal) => snap[signal.key] > 0)
     .map((signal) => `${signal.label} ${snap[signal.key]}/${signal.max}`);
 
   if (active.length === 0) {
+    if (activity.comments30m > 0) {
+      return `${activity.comments30m} comments were counted in the last 30m, but they did not create heat. Old accounts and normal pace stay quiet until baseline or risk signals rise.`;
+    }
+
     return 'No active risk signals. Reports, removals, new accounts, velocity, and controversy are all quiet.';
   }
 
-  return `Heat is driven by ${active.join(', ')}. Primary risk: ${dominantSignal(snap)}.`;
+  return `Heat is driven by ${active.join(', ')}. Activity: ${activity.comments30m} comments and ${activity.removals30m} removals in 30m. Primary risk: ${dominantSignal(snap)}.`;
 }
 
 function modeLabel(snap: SignalSnapshot): string {
@@ -495,6 +523,18 @@ function baselineText(snap: SignalSnapshot): string {
     return 'Building';
   }
   return 'Active';
+}
+
+function emptyActivityStats(): ActivityStats {
+  return {
+    comments10m: 0,
+    comments30m: 0,
+    comments24h: 0,
+    removals30m: 0,
+    reports60m: 0,
+    newAccounts20m: 0,
+    controversial60m: 0,
+  };
 }
 
 function themePalette(theme: DashboardTheme): DashboardPalette {
