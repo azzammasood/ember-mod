@@ -230,19 +230,19 @@ Devvit.addCustomPostType({
   name: 'Ember Dashboard',
   height: 'regular',
   render: (context) => {
-    const [snapState] = context.useState(async (): Promise<any> => {
+    const [snapState, setSnapState] = context.useState(async (): Promise<any> => {
       return await getSnapshot(context.kvStore);
     });
-    const [configState] = context.useState(async (): Promise<any> => {
+    const [configState, setConfigState] = context.useState(async (): Promise<any> => {
       return await loadConfig(context);
     });
-    const [historyState] = context.useState(async (): Promise<any> => {
+    const [historyState, setHistoryState] = context.useState(async (): Promise<any> => {
       return await getSnapshotHistory(context.kvStore);
     });
-    const [lastAlertState] = context.useState(async (): Promise<any> => {
+    const [lastAlertState, setLastAlertState] = context.useState(async (): Promise<any> => {
       return await getLastAlert(context.kvStore);
     });
-    const [theme, setTheme] = context.useState<DashboardTheme>('abyss');
+    const [theme, setTheme] = context.useState<DashboardTheme>('ember');
     const [panel, setPanel] = context.useState<DashboardPanel>('trend');
     const [chooser, setChooser] = context.useState<DashboardChooser>('none');
 
@@ -259,6 +259,14 @@ Devvit.addCustomPostType({
       chooser,
       onThemePress: () => setChooser(chooser === 'theme' ? 'none' : 'theme'),
       onPanelPress: () => setChooser(chooser === 'panel' ? 'none' : 'panel'),
+      onSettingsPress: () => setChooser('settings'),
+      onRefresh: async () => {
+        const latestSnap = await scanAndMaybeAlert(context);
+        setSnapState(latestSnap);
+        setConfigState(await loadConfig(context));
+        setHistoryState(await getSnapshotHistory(context.kvStore));
+        setLastAlertState(await getLastAlert(context.kvStore));
+      },
       onChooseTheme: (nextTheme) => {
         setTheme(nextTheme);
         setChooser('none');

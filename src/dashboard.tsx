@@ -22,14 +22,16 @@ type DashboardData = {
   chooser?: DashboardChooser;
   onThemePress?: () => void;
   onPanelPress?: () => void;
+  onSettingsPress?: () => void;
+  onRefresh?: () => void | Promise<void>;
   onChooseTheme?: (theme: DashboardTheme) => void;
   onChoosePanel?: (panel: DashboardPanel) => void;
   onCloseChooser?: () => void;
 };
 
-export type DashboardTheme = 'abyss' | 'dracula' | 'andromeda' | 'nightOwl' | 'synthwave' | 'mono';
-export type DashboardPanel = 'trend' | 'ops' | 'actions';
-export type DashboardChooser = 'none' | 'theme' | 'panel';
+export type DashboardTheme = 'ember' | 'abyss' | 'dracula' | 'andromeda' | 'nightOwl' | 'synthwave' | 'mono';
+export type DashboardPanel = 'trend' | 'ops' | 'actions' | 'explain';
+export type DashboardChooser = 'none' | 'theme' | 'panel' | 'settings';
 
 type DashboardPalette = {
   bg: string;
@@ -76,10 +78,15 @@ export function renderDashboard(
 
   const meta = LEVEL_META[snap.level];
   const primary = dominantSignal(snap);
-  const theme = data.theme ?? 'abyss';
+  const theme = data.theme ?? 'ember';
   const panel = data.panel ?? 'trend';
   const chooser = data.chooser ?? 'none';
   const palette = themePalette(theme);
+
+  if (chooser === 'settings') {
+    return settingsPanel(snap, config, data.lastAlert, palette, data);
+  }
+
   return (
     <vstack padding="small" gap="small" width="100%" height="100%" backgroundColor={palette.bg}>
       <hstack gap="none" width="100%">
@@ -118,6 +125,8 @@ export function renderDashboard(
           <hstack alignment="middle center" gap="small" width="100%">
             <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onThemePress}>Theme</button>
             <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
+            <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
+            <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onSettingsPress}>Settings</button>
             <text size="xsmall" color={palette.muted}>Updated {formatTime(snap.computedAt)}</text>
             <spacer size="medium" />
             <text size="xsmall" color={palette.muted}>Threshold {config.alertThreshold}</text>
@@ -233,7 +242,16 @@ function detailPanel(
     return (
       <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
         <text alignment="center" size="xsmall" color={accent} weight="bold">Ops Status</text>
-        <text alignment="center" size="xsmall" color={palette.text}>Last alert: {lastAlertText(lastAlert)}   Baseline: {baselineText(snap)}</text>
+        <hstack alignment="middle center" gap="small" width="100%">
+          <vstack alignment="middle center" backgroundColor={palette.panel} cornerRadius="small" padding="small" gap="none" width="50%">
+            <text alignment="center" size="xsmall" color={palette.muted}>Last alert</text>
+            <text alignment="center" size="small" color={palette.text} weight="bold">{lastAlertText(lastAlert)}</text>
+          </vstack>
+          <vstack alignment="middle center" backgroundColor={palette.panel} cornerRadius="small" padding="small" gap="none" width="50%">
+            <text alignment="center" size="xsmall" color={palette.muted}>Baseline</text>
+            <text alignment="center" size="small" color={palette.text} weight="bold">{baselineText(snap)}</text>
+          </vstack>
+        </hstack>
       </vstack>
     );
   }
@@ -243,6 +261,15 @@ function detailPanel(
       <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
         <text alignment="center" size="xsmall" color={accent} weight="bold">Recommended Action</text>
         <text alignment="center" size="xsmall" color={palette.text}>{recommendedAction(snap)}</text>
+      </vstack>
+    );
+  }
+
+  if (panel === 'explain') {
+    return (
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <text alignment="center" size="xsmall" color={accent} weight="bold">Score Explanation</text>
+        <text alignment="center" size="xsmall" color={palette.text}>{scoreExplanation(snap)}</text>
       </vstack>
     );
   }
@@ -267,14 +294,18 @@ function chooserPanel(
 ): JSX.Element {
   if (chooser === 'theme') {
     return (
-      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="none" width="100%">
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
         <hstack alignment="middle center" gap="small" width="100%">
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('ember')}>Ember</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('abyss')}>Abyss</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('dracula')}>Dracula</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('andromeda')}>Andromeda</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('nightOwl')}>Night Owl</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('andromeda')}>Andro</button>
+        </hstack>
+        <hstack alignment="middle center" gap="small" width="100%">
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('nightOwl')}>Night</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('synthwave')}>Synth</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('mono')}>Mono</button>
+          <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
         </hstack>
       </vstack>
     );
@@ -287,6 +318,7 @@ function chooserPanel(
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('trend')}>Trend</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('ops')}>Ops</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('actions')}>Actions</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('explain')}>Explain</button>
           <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
         </hstack>
       </vstack>
@@ -294,6 +326,67 @@ function chooserPanel(
   }
 
   return detailPanel(panel, snap, history, lastAlert, accent, palette);
+}
+
+function settingsPanel(
+  snap: SignalSnapshot,
+  config: EmberConfig,
+  lastAlert: AlertRecord | null | undefined,
+  palette: DashboardPalette,
+  data: DashboardData,
+): JSX.Element {
+  return (
+    <vstack padding="medium" gap="small" width="100%" height="100%" backgroundColor={palette.bg}>
+      <hstack alignment="middle center" width="100%">
+        <vstack gap="none">
+          <text size="large" weight="bold" color={palette.accent}>EMBER SETTINGS</text>
+          <text size="xsmall" color={palette.muted}>Install configuration snapshot</text>
+        </vstack>
+        <spacer size="medium" />
+        <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
+        <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
+      </hstack>
+
+      <hstack gap="small" width="100%">
+        {settingCard('Heat', `${snap.total}/100`, palette)}
+        {settingCard('Threshold', `${config.alertThreshold}`, palette)}
+        {settingCard('Cooldown', `${config.alertCooldownMinutes} min`, palette)}
+        {settingCard('Scan', `${config.scanIntervalMinutes} min`, palette)}
+      </hstack>
+
+      <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <hstack width="100%" alignment="middle center">
+          <text size="xsmall" color={palette.muted}>Alerts muted</text>
+          <spacer size="small" />
+          <text size="xsmall" weight="bold" color={palette.text}>{config.muteAlerts ? 'Yes' : 'No'}</text>
+        </hstack>
+        <hstack width="100%" alignment="middle center">
+          <text size="xsmall" color={palette.muted}>Last alert</text>
+          <spacer size="small" />
+          <text size="xsmall" weight="bold" color={palette.text}>{lastAlertText(lastAlert)}</text>
+        </hstack>
+        <hstack width="100%" alignment="middle center">
+          <text size="xsmall" color={palette.muted}>Baseline status</text>
+          <spacer size="small" />
+          <text size="xsmall" weight="bold" color={palette.text}>{baselineText(snap)}</text>
+        </hstack>
+      </vstack>
+
+      <vstack backgroundColor={palette.panel} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <text size="xsmall" weight="bold" color={palette.accent}>Edit settings</text>
+        <text size="xsmall" color={palette.text}>Dashboard settings are read-only here. Change alert threshold, cooldown, scan interval, and mute alerts in Mod Tools - Apps - Ember.</text>
+      </vstack>
+    </vstack>
+  );
+}
+
+function settingCard(label: string, value: string, palette: DashboardPalette): JSX.Element {
+  return (
+    <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="none" width="25%">
+      <text alignment="center" size="xsmall" color={palette.muted}>{label}</text>
+      <text alignment="center" size="small" weight="bold" color={palette.text}>{value}</text>
+    </vstack>
+  );
 }
 
 function normalizeHistory(history: SignalSnapshot[], snap: SignalSnapshot): number[] {
@@ -337,6 +430,18 @@ function recommendedAction(snap: SignalSnapshot): string {
   return 'No action needed. Ember will alert mods if heat rises.';
 }
 
+function scoreExplanation(snap: SignalSnapshot): string {
+  const active = SIGNALS
+    .filter((signal) => snap[signal.key] > 0)
+    .map((signal) => `${signal.label} ${snap[signal.key]}/${signal.max}`);
+
+  if (active.length === 0) {
+    return 'No active risk signals. Reports, removals, new accounts, velocity, and controversy are all quiet.';
+  }
+
+  return `Heat is driven by ${active.join(', ')}. Primary risk: ${dominantSignal(snap)}.`;
+}
+
 function modeLabel(snap: SignalSnapshot): string {
   if (snap.total >= 75) return 'Incident Mode';
   if (snap.total >= 56) return 'Active Watch';
@@ -372,6 +477,17 @@ function baselineText(snap: SignalSnapshot): string {
 }
 
 function themePalette(theme: DashboardTheme): DashboardPalette {
+  if (theme === 'ember') {
+    return {
+      bg: '#090604',
+      panel: '#1f1208',
+      card: '#160d08',
+      muted: '#f59e0b',
+      text: '#fff7ed',
+      accent: '#ff6b35',
+    };
+  }
+
   if (theme === 'dracula') {
     return {
       bg: '#171521',
@@ -438,12 +554,13 @@ function themePalette(theme: DashboardTheme): DashboardPalette {
 }
 
 export function nextDashboardTheme(theme: DashboardTheme): DashboardTheme {
+  if (theme === 'ember') return 'abyss';
   if (theme === 'abyss') return 'dracula';
   if (theme === 'dracula') return 'andromeda';
   if (theme === 'andromeda') return 'nightOwl';
   if (theme === 'nightOwl') return 'synthwave';
   if (theme === 'synthwave') return 'mono';
-  return 'abyss';
+  return 'ember';
 }
 
 export function nextDashboardPanel(panel: DashboardPanel): DashboardPanel {
