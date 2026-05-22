@@ -27,7 +27,7 @@ type DashboardData = {
   onCloseChooser?: () => void;
 };
 
-export type DashboardTheme = 'ember' | 'aurora' | 'contrast' | 'ocean' | 'violet' | 'solar';
+export type DashboardTheme = 'abyss' | 'dracula' | 'andromeda' | 'nightOwl' | 'synthwave' | 'mono';
 export type DashboardPanel = 'trend' | 'ops' | 'actions';
 export type DashboardChooser = 'none' | 'theme' | 'panel';
 
@@ -76,7 +76,7 @@ export function renderDashboard(
 
   const meta = LEVEL_META[snap.level];
   const primary = dominantSignal(snap);
-  const theme = data.theme ?? 'ember';
+  const theme = data.theme ?? 'abyss';
   const panel = data.panel ?? 'trend';
   const chooser = data.chooser ?? 'none';
   const palette = themePalette(theme);
@@ -107,11 +107,11 @@ export function renderDashboard(
                 <spacer size="small" />
                 <text size="xsmall" color={meta.accent}>{modeLabel(snap)}</text>
               </hstack>
-              {heatmapRow(SIGNALS[0], snap)}
-              {heatmapRow(SIGNALS[1], snap)}
-              {heatmapRow(SIGNALS[2], snap)}
-              {heatmapRow(SIGNALS[3], snap)}
-              {heatmapRow(SIGNALS[4], snap)}
+              {heatmapRow(SIGNALS[0], snap, palette)}
+              {heatmapRow(SIGNALS[1], snap, palette)}
+              {heatmapRow(SIGNALS[2], snap, palette)}
+              {heatmapRow(SIGNALS[3], snap, palette)}
+              {heatmapRow(SIGNALS[4], snap, palette)}
             </vstack>
           </hstack>
 
@@ -159,12 +159,12 @@ export function formatTime(ms: number): string {
   return `${new Date(ms).toISOString().slice(11, 16)} UTC`;
 }
 
-function heatmapRow(signal: HeatmapSignal, snap: SignalSnapshot): JSX.Element {
+function heatmapRow(signal: HeatmapSignal, snap: SignalSnapshot, palette: DashboardPalette): JSX.Element {
   const score = snap[signal.key];
   const activeCells = Math.max(0, Math.min(10, Math.ceil((score / signal.max) * 10)));
   return (
     <hstack gap="small" alignment="middle center" width="100%">
-      <text size="xsmall" color="#cbd5e1" weight="bold" width="76px" overflow="ellipsis">{signal.label}</text>
+      <text size="xsmall" color={palette.text} weight="bold" width="76px" overflow="ellipsis">{signal.label}</text>
       {heatCell(1, activeCells, signal.color)}
       {heatCell(2, activeCells, signal.color)}
       {heatCell(3, activeCells, signal.color)}
@@ -175,7 +175,7 @@ function heatmapRow(signal: HeatmapSignal, snap: SignalSnapshot): JSX.Element {
       {heatCell(8, activeCells, signal.color)}
       {heatCell(9, activeCells, signal.color)}
       {heatCell(10, activeCells, signal.color)}
-      <text size="xsmall" color="#94a3b8" width="42px">{score}/{signal.max}</text>
+      <text size="xsmall" color={palette.muted} width="42px">{score}/{signal.max}</text>
     </hstack>
   );
 }
@@ -269,12 +269,12 @@ function chooserPanel(
     return (
       <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="none" width="100%">
         <hstack alignment="middle center" gap="small" width="100%">
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('ember')}>Ember</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('aurora')}>Aurora</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('ocean')}>Ocean</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('violet')}>Violet</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('solar')}>Solar</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('contrast')}>Mono</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('abyss')}>Abyss</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('dracula')}>Dracula</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('andromeda')}>Andromeda</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('nightOwl')}>Night Owl</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('synthwave')}>Synth</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('mono')}>Mono</button>
         </hstack>
       </vstack>
     );
@@ -372,78 +372,78 @@ function baselineText(snap: SignalSnapshot): string {
 }
 
 function themePalette(theme: DashboardTheme): DashboardPalette {
-  if (theme === 'aurora') {
+  if (theme === 'dracula') {
     return {
-      bg: '#06140f',
-      panel: '#0b2a22',
-      card: '#10251f',
-      muted: '#7dd3c7',
-      text: '#dffcf4',
-      accent: '#2dd4bf',
+      bg: '#171521',
+      panel: '#282a36',
+      card: '#1f2030',
+      muted: '#bd93f9',
+      text: '#f8f8f2',
+      accent: '#ff79c6',
     };
   }
 
-  if (theme === 'ocean') {
+  if (theme === 'andromeda') {
     return {
-      bg: '#04111f',
-      panel: '#0b2545',
-      card: '#0f1d33',
-      muted: '#7dd3fc',
-      text: '#e0f2fe',
-      accent: '#38bdf8',
+      bg: '#141923',
+      panel: '#232b3d',
+      card: '#1b2233',
+      muted: '#a0a1c4',
+      text: '#f8f8f2',
+      accent: '#c74ded',
     };
   }
 
-  if (theme === 'violet') {
+  if (theme === 'nightOwl') {
     return {
-      bg: '#12091f',
-      panel: '#251044',
-      card: '#1c1235',
-      muted: '#c4b5fd',
-      text: '#ede9fe',
-      accent: '#a78bfa',
+      bg: '#011627',
+      panel: '#0b2942',
+      card: '#081f33',
+      muted: '#82aaff',
+      text: '#d6deeb',
+      accent: '#7fdbca',
     };
   }
 
-  if (theme === 'solar') {
+  if (theme === 'synthwave') {
     return {
-      bg: '#181008',
-      panel: '#3a2207',
-      card: '#241609',
-      muted: '#fbbf24',
-      text: '#fff7ed',
-      accent: '#f97316',
+      bg: '#1a102d',
+      panel: '#2b174f',
+      card: '#21133f',
+      muted: '#f7aef8',
+      text: '#fff5ff',
+      accent: '#ff7edb',
     };
   }
 
-  if (theme === 'contrast') {
+  if (theme === 'mono') {
     return {
-      bg: '#030712',
-      panel: '#1f2937',
-      card: '#111827',
-      muted: '#cbd5e1',
-      text: '#f8fafc',
-      accent: '#f8fafc',
+      bg: '#f4f4f0',
+      panel: '#ffffff',
+      card: '#e8e8e2',
+      muted: '#3f3f46',
+      text: '#0a0a0a',
+      accent: '#111111',
     };
   }
 
   return {
-    bg: '#070b12',
-    panel: '#0f172a',
-    card: '#111827',
-    muted: '#64748b',
-    text: '#e2e8f0',
-    accent: '#FF6B35',
+    bg: '#050814',
+    panel: '#0a1024',
+    card: '#0e172f',
+    muted: '#6b8cff',
+    text: '#d9e6ff',
+    accent: '#4cc9f0',
   };
 }
 
 export function nextDashboardTheme(theme: DashboardTheme): DashboardTheme {
-  if (theme === 'ember') return 'aurora';
-  if (theme === 'aurora') return 'ocean';
-  if (theme === 'ocean') return 'violet';
-  if (theme === 'violet') return 'solar';
-  if (theme === 'solar') return 'contrast';
-  return 'ember';
+  if (theme === 'abyss') return 'dracula';
+  if (theme === 'dracula') return 'andromeda';
+  if (theme === 'andromeda') return 'nightOwl';
+  if (theme === 'nightOwl') return 'synthwave';
+  if (theme === 'synthwave') return 'mono';
+  return 'abyss';
 }
 
 export function nextDashboardPanel(panel: DashboardPanel): DashboardPanel {

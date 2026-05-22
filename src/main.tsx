@@ -242,7 +242,7 @@ Devvit.addCustomPostType({
     const [lastAlertState] = context.useState(async (): Promise<any> => {
       return await getLastAlert(context.kvStore);
     });
-    const [theme, setTheme] = context.useState<DashboardTheme>('ember');
+    const [theme, setTheme] = context.useState<DashboardTheme>('abyss');
     const [panel, setPanel] = context.useState<DashboardPanel>('trend');
     const [chooser, setChooser] = context.useState<DashboardChooser>('none');
 
