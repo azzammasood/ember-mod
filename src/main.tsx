@@ -3,13 +3,11 @@ import type { Context } from '@devvit/public-api';
 
 import { maybeSendAlert } from './alerter.js';
 import {
-  nextDashboardPanel,
-  nextDashboardTheme,
   renderDashboard,
   renderLoadingDashboard,
   renderSafeDashboardFallback,
 } from './dashboard.js';
-import type { DashboardPanel, DashboardTheme } from './dashboard.js';
+import type { DashboardChooser, DashboardPanel, DashboardTheme } from './dashboard.js';
 import { computeHeat } from './heatEngine.js';
 import {
   getConfig,
@@ -245,6 +243,7 @@ Devvit.addCustomPostType({
     });
     const [theme, setTheme] = context.useState<DashboardTheme>('ember');
     const [panel, setPanel] = context.useState<DashboardPanel>('trend');
+    const [chooser, setChooser] = context.useState<DashboardChooser>('none');
 
     const snap = snapState as SignalSnapshot | null;
     const config = configState as EmberConfig | null;
@@ -256,8 +255,18 @@ Devvit.addCustomPostType({
       lastAlert,
       theme,
       panel,
-      onThemePress: () => setTheme(nextDashboardTheme(theme)),
-      onPanelPress: () => setPanel(nextDashboardPanel(panel)),
+      chooser,
+      onThemePress: () => setChooser(chooser === 'theme' ? 'none' : 'theme'),
+      onPanelPress: () => setChooser(chooser === 'panel' ? 'none' : 'panel'),
+      onChooseTheme: (nextTheme) => {
+        setTheme(nextTheme);
+        setChooser('none');
+      },
+      onChoosePanel: (nextPanel) => {
+        setPanel(nextPanel);
+        setChooser('none');
+      },
+      onCloseChooser: () => setChooser('none'),
     });
   },
 });

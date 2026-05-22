@@ -19,12 +19,17 @@ type DashboardData = {
   lastAlert?: AlertRecord | null;
   theme?: DashboardTheme;
   panel?: DashboardPanel;
+  chooser?: DashboardChooser;
   onThemePress?: () => void;
   onPanelPress?: () => void;
+  onChooseTheme?: (theme: DashboardTheme) => void;
+  onChoosePanel?: (panel: DashboardPanel) => void;
+  onCloseChooser?: () => void;
 };
 
 export type DashboardTheme = 'ember' | 'aurora' | 'contrast';
 export type DashboardPanel = 'trend' | 'ops' | 'actions';
+export type DashboardChooser = 'none' | 'theme' | 'panel';
 
 type DashboardPalette = {
   bg: string;
@@ -73,6 +78,7 @@ export function renderDashboard(
   const primary = dominantSignal(snap);
   const theme = data.theme ?? 'ember';
   const panel = data.panel ?? 'trend';
+  const chooser = data.chooser ?? 'none';
   const palette = themePalette(theme);
   return (
     <vstack padding="small" gap="small" width="100%" height="100%" backgroundColor={palette.bg}>
@@ -110,12 +116,12 @@ export function renderDashboard(
           </hstack>
 
           <hstack gap="small" width="100%">
-            {detailPanel(panel, snap, data.history ?? [], data.lastAlert, meta.accent, palette)}
+            {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, meta.accent, palette, data)}
           </hstack>
 
           <hstack alignment="middle center" gap="small" width="100%">
-            <button size="small" appearance="bordered" onPress={data.onThemePress}>Theme</button>
-            <button size="small" appearance="bordered" onPress={data.onPanelPress}>Panel</button>
+            <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onThemePress}>Theme</button>
+            <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
             <text size="xsmall" color={palette.muted}>Updated {formatTime(snap.computedAt)}</text>
             <spacer size="medium" />
             <text size="xsmall" color={palette.muted}>Threshold {config.alertThreshold}</text>
@@ -225,36 +231,69 @@ function detailPanel(
 ): JSX.Element {
   if (panel === 'ops') {
     return (
-      <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-        <text size="xsmall" color={accent} weight="bold">Ops Status</text>
-        <hstack gap="small" width="100%">
-          <text size="xsmall" color={palette.text}>Last alert: {lastAlertText(lastAlert)}</text>
-          <spacer size="small" />
-          <text size="xsmall" color={palette.text}>Baseline: {baselineText(snap)}</text>
-        </hstack>
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <text alignment="center" size="xsmall" color={accent} weight="bold">Ops Status</text>
+        <text alignment="center" size="xsmall" color={palette.text}>Last alert: {lastAlertText(lastAlert)}   Baseline: {baselineText(snap)}</text>
       </vstack>
     );
   }
 
   if (panel === 'actions') {
     return (
-      <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-        <text size="xsmall" color={accent} weight="bold">Recommended Action</text>
-        <text size="xsmall" color={palette.text}>{recommendedAction(snap)}</text>
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <text alignment="center" size="xsmall" color={accent} weight="bold">Recommended Action</text>
+        <text alignment="center" size="xsmall" color={palette.text}>{recommendedAction(snap)}</text>
       </vstack>
     );
   }
 
   return (
-    <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-      <hstack alignment="middle center" width="100%">
-        <text size="xsmall" color={accent} weight="bold">Trend</text>
-        <spacer size="small" />
-        <text size="xsmall" color={palette.muted}>last scans</text>
-      </hstack>
+    <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+      <text alignment="center" size="xsmall" color={accent} weight="bold">Trend - last scans</text>
       {sparkline(history, snap)}
     </vstack>
   );
+}
+
+function chooserPanel(
+  chooser: DashboardChooser,
+  snap: SignalSnapshot,
+  panel: DashboardPanel,
+  history: SignalSnapshot[],
+  lastAlert: AlertRecord | null | undefined,
+  accent: string,
+  palette: DashboardPalette,
+  data: DashboardData,
+): JSX.Element {
+  if (chooser === 'theme') {
+    return (
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <text alignment="center" size="xsmall" color={accent} weight="bold">Choose Theme</text>
+        <hstack alignment="middle center" gap="small" width="100%">
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('ember')}>Ember</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('aurora')}>Aurora</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('contrast')}>Contrast</button>
+          <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
+        </hstack>
+      </vstack>
+    );
+  }
+
+  if (chooser === 'panel') {
+    return (
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <text alignment="center" size="xsmall" color={accent} weight="bold">Choose Panel</text>
+        <hstack alignment="middle center" gap="small" width="100%">
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('trend')}>Trend</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('ops')}>Ops</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('actions')}>Actions</button>
+          <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
+        </hstack>
+      </vstack>
+    );
+  }
+
+  return detailPanel(panel, snap, history, lastAlert, accent, palette);
 }
 
 function normalizeHistory(history: SignalSnapshot[], snap: SignalSnapshot): number[] {
