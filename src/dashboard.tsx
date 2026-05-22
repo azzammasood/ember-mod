@@ -482,13 +482,13 @@ function scoreExplanation(snap: SignalSnapshot, activity: ActivityStats): string
 
   if (active.length === 0) {
     if (activity.comments30m > 0) {
-      return `${activity.comments30m} comments were counted in the last 30m, but they did not create heat. Old accounts and normal pace stay quiet until baseline or risk signals rise.`;
+      return `${activity.comments30m} comments counted. No heat: old accounts, normal pace.`;
     }
 
-    return 'No active risk signals. Reports, removals, new accounts, velocity, and controversy are all quiet.';
+    return 'No active risk signals. Activity is quiet.';
   }
 
-  return `Heat is driven by ${active.join(', ')}. Activity: ${activity.comments30m} comments and ${activity.removals30m} removals in 30m. Primary risk: ${dominantSignal(snap)}.`;
+  return `Heat: ${active.join(', ')}. Primary: ${dominantSignal(snap)}.`;
 }
 
 function modeLabel(snap: SignalSnapshot): string {
