@@ -83,6 +83,10 @@ export function renderDashboard(
   const chooser = data.chooser ?? 'none';
   const palette = themePalette(theme);
 
+  if (chooser === 'theme') {
+    return themePanel(palette, data);
+  }
+
   if (chooser === 'settings') {
     return settingsPanel(snap, config, data.lastAlert, palette, data);
   }
@@ -292,25 +296,6 @@ function chooserPanel(
   palette: DashboardPalette,
   data: DashboardData,
 ): JSX.Element {
-  if (chooser === 'theme') {
-    return (
-      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-        <hstack alignment="middle center" gap="small" width="100%">
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('ember')}>Ember</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('abyss')}>Abyss</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('dracula')}>Dracula</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('andromeda')}>Andro</button>
-        </hstack>
-        <hstack alignment="middle center" gap="small" width="100%">
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('nightOwl')}>Night</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('synthwave')}>Synth</button>
-          <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.('mono')}>Mono</button>
-          <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
-        </hstack>
-      </vstack>
-    );
-  }
-
   if (chooser === 'panel') {
     return (
       <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="none" width="100%">
@@ -326,6 +311,54 @@ function chooserPanel(
   }
 
   return detailPanel(panel, snap, history, lastAlert, accent, palette);
+}
+
+function themePanel(palette: DashboardPalette, data: DashboardData): JSX.Element {
+  return (
+    <vstack padding="medium" gap="small" width="100%" height="100%" backgroundColor={palette.bg}>
+      <hstack alignment="middle center" width="100%">
+        <vstack gap="none">
+          <text size="large" weight="bold" color={palette.accent}>CHOOSE THEME</text>
+          <text size="xsmall" color={palette.muted}>Editor-inspired dashboard palettes</text>
+        </vstack>
+        <spacer size="medium" />
+        <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
+      </hstack>
+
+      <hstack gap="small" width="100%">
+        {themeCard('Ember', 'Default fire console', 'ember', palette, data)}
+        {themeCard('Abyss', 'Deep blue terminal', 'abyss', palette, data)}
+        {themeCard('Dracula', 'Purple command room', 'dracula', palette, data)}
+      </hstack>
+
+      <hstack gap="small" width="100%">
+        {themeCard('Andromeda', 'Soft space palette', 'andromeda', palette, data)}
+        {themeCard('Night Owl', 'Blue operator mode', 'nightOwl', palette, data)}
+        {themeCard('Synth', 'Neon incident board', 'synthwave', palette, data)}
+      </hstack>
+
+      <hstack gap="small" width="100%">
+        {themeCard('Mono', 'Light mode with black UI', 'mono', palette, data)}
+        <vstack width="67%" />
+      </hstack>
+    </vstack>
+  );
+}
+
+function themeCard(
+  title: string,
+  description: string,
+  theme: DashboardTheme,
+  palette: DashboardPalette,
+  data: DashboardData,
+): JSX.Element {
+  return (
+    <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="33%">
+      <text size="small" weight="bold" color={palette.text}>{title}</text>
+      <text size="xsmall" color={palette.muted}>{description}</text>
+      <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChooseTheme?.(theme)}>Apply</button>
+    </vstack>
+  );
 }
 
 function settingsPanel(
@@ -344,6 +377,7 @@ function settingsPanel(
         </vstack>
         <spacer size="medium" />
         <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
+        <spacer size="small" />
         <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
       </hstack>
 
@@ -566,5 +600,6 @@ export function nextDashboardTheme(theme: DashboardTheme): DashboardTheme {
 export function nextDashboardPanel(panel: DashboardPanel): DashboardPanel {
   if (panel === 'trend') return 'ops';
   if (panel === 'ops') return 'actions';
+  if (panel === 'actions') return 'explain';
   return 'trend';
 }
