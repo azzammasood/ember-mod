@@ -17,6 +17,22 @@ const LEVEL_META: Record<HeatLevel, { emoji: string; label: string; bg: string; 
 type DashboardData = {
   history?: SignalSnapshot[];
   lastAlert?: AlertRecord | null;
+  theme?: DashboardTheme;
+  panel?: DashboardPanel;
+  onThemePress?: () => void;
+  onPanelPress?: () => void;
+};
+
+export type DashboardTheme = 'ember' | 'aurora' | 'contrast';
+export type DashboardPanel = 'trend' | 'ops' | 'actions';
+
+type DashboardPalette = {
+  bg: string;
+  panel: string;
+  card: string;
+  muted: string;
+  text: string;
+  accent: string;
 };
 
 type HeatmapSignal = {
@@ -55,18 +71,19 @@ export function renderDashboard(
 
   const meta = LEVEL_META[snap.level];
   const primary = dominantSignal(snap);
+  const theme = data.theme ?? 'ember';
+  const panel = data.panel ?? 'trend';
+  const palette = themePalette(theme);
   return (
-    <vstack padding="small" gap="small" width="100%" height="100%" backgroundColor="#070b12">
+    <vstack padding="small" gap="small" width="100%" height="100%" backgroundColor={palette.bg}>
       <hstack gap="none" width="100%">
-        <vstack width="4%" />
-        <vstack gap="small" width="92%" backgroundColor="#070b12">
+        <vstack width="5%" />
+        <vstack gap="small" width="90%" backgroundColor={palette.bg}>
           <hstack alignment="middle center" gap="small" width="100%">
-            <vstack width="6px" height="24px" backgroundColor="#FF6B35" cornerRadius="full" />
-            <vstack gap="none" width="100%">
-              <text size="large" weight="bold" color="#FF6B35">EMBER</text>
-              <text size="xsmall" color="#94a3b8">Community heat radar</text>
+            <vstack width="100%" gap="none">
+              <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER</text>
+              <text alignment="center" size="xsmall" color={palette.muted}>Community heat radar</text>
             </vstack>
-            <text size="xsmall" color={meta.accent} weight="bold">{modeLabel(snap)}</text>
           </hstack>
 
           <hstack gap="small" width="100%">
@@ -78,11 +95,11 @@ export function renderDashboard(
               <text size="xsmall" color="#cbd5e1">Primary: {primary}</text>
             </vstack>
 
-            <vstack backgroundColor="#0f172a" cornerRadius="large" padding="small" gap="small" width="65%">
+            <vstack backgroundColor={palette.panel} cornerRadius="large" padding="small" gap="small" width="65%">
               <hstack alignment="middle center" width="100%">
-                <text size="small" weight="bold" color="#e2e8f0">Signal Heatmap</text>
+                <text size="small" weight="bold" color={palette.text}>Signal Heatmap</text>
                 <spacer size="small" />
-                <text size="xsmall" color="#64748b">Mode: {modeLabel(snap)}</text>
+                <text size="xsmall" color={meta.accent}>{modeLabel(snap)}</text>
               </hstack>
               {heatmapRow(SIGNALS[0], snap)}
               {heatmapRow(SIGNALS[1], snap)}
@@ -93,29 +110,18 @@ export function renderDashboard(
           </hstack>
 
           <hstack gap="small" width="100%">
-            <vstack backgroundColor="#111827" cornerRadius="medium" padding="small" gap="small" width="62%">
-              <hstack alignment="middle center" width="100%">
-                <text size="xsmall" color="#94a3b8" weight="bold">Trend</text>
-                <spacer size="small" />
-                <text size="xsmall" color="#64748b">last scans</text>
-              </hstack>
-              {sparkline(data.history ?? [], snap)}
-            </vstack>
-
-            <vstack backgroundColor="#111827" cornerRadius="medium" padding="small" gap="small" width="38%">
-              <text size="xsmall" color={meta.accent} weight="bold">Ops</text>
-              <text size="xsmall" color="#cbd5e1">Last alert: {lastAlertText(data.lastAlert)}</text>
-              <text size="xsmall" color="#cbd5e1">Baseline: {baselineText(snap)}</text>
-            </vstack>
+            {detailPanel(panel, snap, data.history ?? [], data.lastAlert, meta.accent, palette)}
           </hstack>
 
-          <hstack alignment="middle center" width="100%">
-            <text size="xsmall" color="#64748b">Updated {formatTime(snap.computedAt)}</text>
+          <hstack alignment="middle center" gap="small" width="100%">
+            <button size="small" appearance="bordered" onPress={data.onThemePress}>Theme</button>
+            <button size="small" appearance="bordered" onPress={data.onPanelPress}>Panel</button>
+            <text size="xsmall" color={palette.muted}>Updated {formatTime(snap.computedAt)}</text>
             <spacer size="medium" />
-            <text size="xsmall" color="#64748b">Threshold {config.alertThreshold}</text>
+            <text size="xsmall" color={palette.muted}>Threshold {config.alertThreshold}</text>
           </hstack>
         </vstack>
-        <vstack width="4%" />
+        <vstack width="5%" />
       </hstack>
     </vstack>
   );
@@ -209,6 +215,48 @@ function sparkCell(score: number): JSX.Element {
   );
 }
 
+function detailPanel(
+  panel: DashboardPanel,
+  snap: SignalSnapshot,
+  history: SignalSnapshot[],
+  lastAlert: AlertRecord | null | undefined,
+  accent: string,
+  palette: DashboardPalette,
+): JSX.Element {
+  if (panel === 'ops') {
+    return (
+      <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <text size="xsmall" color={accent} weight="bold">Ops Status</text>
+        <hstack gap="small" width="100%">
+          <text size="xsmall" color={palette.text}>Last alert: {lastAlertText(lastAlert)}</text>
+          <spacer size="small" />
+          <text size="xsmall" color={palette.text}>Baseline: {baselineText(snap)}</text>
+        </hstack>
+      </vstack>
+    );
+  }
+
+  if (panel === 'actions') {
+    return (
+      <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+        <text size="xsmall" color={accent} weight="bold">Recommended Action</text>
+        <text size="xsmall" color={palette.text}>{recommendedAction(snap)}</text>
+      </vstack>
+    );
+  }
+
+  return (
+    <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+      <hstack alignment="middle center" width="100%">
+        <text size="xsmall" color={accent} weight="bold">Trend</text>
+        <spacer size="small" />
+        <text size="xsmall" color={palette.muted}>last scans</text>
+      </hstack>
+      {sparkline(history, snap)}
+    </vstack>
+  );
+}
+
 function normalizeHistory(history: SignalSnapshot[], snap: SignalSnapshot): number[] {
   const scores = history.map((entry) => entry.total).concat(snap.total).slice(-8);
   while (scores.length < 8) scores.unshift(0);
@@ -243,6 +291,13 @@ function alertDistance(snap: SignalSnapshot, config: EmberConfig): string {
   return `+${config.alertThreshold - snap.total} heat to alert`;
 }
 
+function recommendedAction(snap: SignalSnapshot): string {
+  if (snap.total >= 75) return 'Lock volatile threads, review reports, and alert the mod team.';
+  if (snap.total >= 56) return 'Review active reports and watch fast-moving threads.';
+  if (snap.total >= 31) return 'Keep watching. Early warning signals are present.';
+  return 'No action needed. Ember will alert mods if heat rises.';
+}
+
 function modeLabel(snap: SignalSnapshot): string {
   if (snap.total >= 75) return 'Incident Mode';
   if (snap.total >= 56) return 'Active Watch';
@@ -275,4 +330,49 @@ function baselineText(snap: SignalSnapshot): string {
     return 'Building';
   }
   return 'Active';
+}
+
+function themePalette(theme: DashboardTheme): DashboardPalette {
+  if (theme === 'aurora') {
+    return {
+      bg: '#06140f',
+      panel: '#0b2a22',
+      card: '#10251f',
+      muted: '#7dd3c7',
+      text: '#dffcf4',
+      accent: '#2dd4bf',
+    };
+  }
+
+  if (theme === 'contrast') {
+    return {
+      bg: '#030712',
+      panel: '#1f2937',
+      card: '#111827',
+      muted: '#cbd5e1',
+      text: '#f8fafc',
+      accent: '#f8fafc',
+    };
+  }
+
+  return {
+    bg: '#070b12',
+    panel: '#0f172a',
+    card: '#111827',
+    muted: '#64748b',
+    text: '#e2e8f0',
+    accent: '#FF6B35',
+  };
+}
+
+export function nextDashboardTheme(theme: DashboardTheme): DashboardTheme {
+  if (theme === 'ember') return 'aurora';
+  if (theme === 'aurora') return 'contrast';
+  return 'ember';
+}
+
+export function nextDashboardPanel(panel: DashboardPanel): DashboardPanel {
+  if (panel === 'trend') return 'ops';
+  if (panel === 'ops') return 'actions';
+  return 'trend';
 }

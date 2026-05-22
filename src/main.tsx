@@ -2,7 +2,14 @@ import { Devvit } from '@devvit/public-api';
 import type { Context } from '@devvit/public-api';
 
 import { maybeSendAlert } from './alerter.js';
-import { renderDashboard, renderLoadingDashboard, renderSafeDashboardFallback } from './dashboard.js';
+import {
+  nextDashboardPanel,
+  nextDashboardTheme,
+  renderDashboard,
+  renderLoadingDashboard,
+  renderSafeDashboardFallback,
+} from './dashboard.js';
+import type { DashboardPanel, DashboardTheme } from './dashboard.js';
 import { computeHeat } from './heatEngine.js';
 import {
   getConfig,
@@ -236,13 +243,22 @@ Devvit.addCustomPostType({
     const [lastAlertState] = context.useState(async (): Promise<any> => {
       return await getLastAlert(context.kvStore);
     });
+    const [theme, setTheme] = context.useState<DashboardTheme>('ember');
+    const [panel, setPanel] = context.useState<DashboardPanel>('trend');
 
     const snap = snapState as SignalSnapshot | null;
     const config = configState as EmberConfig | null;
     const history = historyState as SignalSnapshot[];
     const lastAlert = lastAlertState as any;
     if (!config) return renderLoadingDashboard();
-    return renderDashboard(snap, config, { history, lastAlert });
+    return renderDashboard(snap, config, {
+      history,
+      lastAlert,
+      theme,
+      panel,
+      onThemePress: () => setTheme(nextDashboardTheme(theme)),
+      onPanelPress: () => setPanel(nextDashboardPanel(panel)),
+    });
   },
 });
 
