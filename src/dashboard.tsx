@@ -207,7 +207,7 @@ function heatCell(index: number, activeCells: number, color: string): JSX.Elemen
 function sparkline(history: SignalSnapshot[], snap: SignalSnapshot): JSX.Element {
   const samples = normalizeHistory(history, snap);
   return (
-    <hstack gap="small" alignment="middle center" width="220px">
+    <hstack gap="small" alignment="middle center" width="180px">
       {sparkCell(samples[0])}
       {sparkCell(samples[1])}
       {sparkCell(samples[2])}
@@ -216,8 +216,6 @@ function sparkline(history: SignalSnapshot[], snap: SignalSnapshot): JSX.Element
       {sparkCell(samples[5])}
       {sparkCell(samples[6])}
       {sparkCell(samples[7])}
-      <spacer size="small" />
-      <text size="xsmall" color="#94a3b8">{trendText(samples)}</text>
     </hstack>
   );
 }
@@ -448,14 +446,6 @@ function normalizeHistory(history: SignalSnapshot[], snap: SignalSnapshot): numb
   const scores = history.map((entry) => entry.total).concat(snap.total).slice(-8);
   while (scores.length < 8) scores.unshift(0);
   return scores;
-}
-
-function trendText(scores: number[]): string {
-  const first = scores[0] ?? 0;
-  const last = scores[scores.length - 1] ?? 0;
-  if (last >= first + 10) return 'rising';
-  if (last <= first - 10) return 'cooling';
-  return 'steady';
 }
 
 function sparkHeight(score: number): '22px' | '18px' | '14px' | '10px' {
