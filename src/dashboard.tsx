@@ -100,31 +100,32 @@ export function renderDashboard(
         <vstack gap="small" width="90%" backgroundColor={palette.bg}>
           <hstack alignment="middle center" gap="small" width="100%">
             <vstack width="100%" gap="none">
-              <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER</text>
-              <text alignment="center" size="xsmall" color={palette.muted}>Community heat radar</text>
+              <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER // HEAT RADAR</text>
+              <text alignment="center" size="xsmall" color={palette.muted}>{communityStatus(snap, activity)}</text>
             </vstack>
           </hstack>
 
           <hstack gap="small" width="100%">
-            <vstack backgroundColor={meta.bg} cornerRadius="large" padding="small" gap="small" width="35%">
+            <vstack backgroundColor={meta.bg} cornerRadius="large" padding="small" gap="small" width="34%">
               <text size="xxlarge" weight="bold" color="#ffffff">{snap.total}</text>
               <text size="xsmall" color="#e5e7eb">/100 Heat Score</text>
               <text size="small" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
+              <text size="xsmall" color="#f8fafc">Mode: {modeLabel(snap)}</text>
               <text size="xsmall" color="#f8fafc">{alertDistance(snap, config)}</text>
-              <text size="xsmall" color="#cbd5e1">Primary: {primary}</text>
+              <text size="xsmall" color="#cbd5e1">Primary: {primary} | Base: {baselineText(snap)}</text>
             </vstack>
 
-            <vstack backgroundColor={palette.panel} cornerRadius="large" padding="small" gap="small" width="65%">
+            <vstack backgroundColor={palette.panel} cornerRadius="large" padding="small" gap="small" width="66%">
               <hstack alignment="middle center" width="100%">
-                <text size="small" weight="bold" color={palette.text}>Signal Heatmap</text>
+                <text size="small" weight="bold" color={palette.text}>Signal Meters</text>
                 <spacer size="small" />
                 <text size="xsmall" color={meta.accent}>{modeLabel(snap)}</text>
               </hstack>
-              {heatmapRow(SIGNALS[0], snap, palette)}
-              {heatmapRow(SIGNALS[1], snap, palette)}
-              {heatmapRow(SIGNALS[2], snap, palette)}
-              {heatmapRow(SIGNALS[3], snap, palette)}
-              {heatmapRow(SIGNALS[4], snap, palette)}
+              {signalMeterRow(SIGNALS[0], snap, palette)}
+              {signalMeterRow(SIGNALS[1], snap, palette)}
+              {signalMeterRow(SIGNALS[2], snap, palette)}
+              {signalMeterRow(SIGNALS[3], snap, palette)}
+              {signalMeterRow(SIGNALS[4], snap, palette)}
             </vstack>
           </hstack>
 
@@ -174,9 +175,9 @@ export function formatTime(ms: number): string {
   return `${new Date(ms).toISOString().slice(11, 16)} UTC`;
 }
 
-function heatmapRow(signal: HeatmapSignal, snap: SignalSnapshot, palette: DashboardPalette): JSX.Element {
+function signalMeterRow(signal: HeatmapSignal, snap: SignalSnapshot, palette: DashboardPalette): JSX.Element {
   const score = snap[signal.key];
-  const activeCells = Math.max(0, Math.min(10, Math.ceil((score / signal.max) * 10)));
+  const activeCells = Math.max(0, Math.min(5, Math.ceil((score / signal.max) * 5)));
   return (
     <hstack gap="small" alignment="middle center" width="100%">
       <text size="xsmall" color={palette.text} weight="bold" width="76px" overflow="ellipsis">{signal.label}</text>
@@ -185,11 +186,7 @@ function heatmapRow(signal: HeatmapSignal, snap: SignalSnapshot, palette: Dashbo
       {heatCell(3, activeCells, signal.color)}
       {heatCell(4, activeCells, signal.color)}
       {heatCell(5, activeCells, signal.color)}
-      {heatCell(6, activeCells, signal.color)}
-      {heatCell(7, activeCells, signal.color)}
-      {heatCell(8, activeCells, signal.color)}
-      {heatCell(9, activeCells, signal.color)}
-      {heatCell(10, activeCells, signal.color)}
+      <vstack width="42px" height="8px" cornerRadius="small" backgroundColor={score > 0 ? signal.color : '#1e293b'} />
       <text size="xsmall" color={palette.muted} width="42px">{score}/{signal.max}</text>
     </hstack>
   );
@@ -199,8 +196,8 @@ function heatCell(index: number, activeCells: number, color: string): JSX.Elemen
   const active = index <= activeCells;
   return (
     <vstack
-      width="12px"
-      height="12px"
+      width="18px"
+      height="8px"
       cornerRadius="small"
       backgroundColor={active ? color : '#1e293b'}
     />
@@ -283,13 +280,17 @@ function detailPanel(
   return (
     <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
       <hstack alignment="middle center" gap="small" width="100%">
-        <text size="xsmall" color={accent} weight="bold">Activity</text>
-        <text size="xsmall" color={palette.muted}>10m</text>
-        <text size="small" color={palette.text} weight="bold">{activity.comments10m}</text>
-        <text size="xsmall" color={palette.muted}>30m</text>
-        <text size="small" color={palette.text} weight="bold">{activity.comments30m}</text>
-        <text size="xsmall" color={palette.muted}>Removed</text>
-        <text size="small" color={palette.text} weight="bold">{activity.removals30m}</text>
+        <text size="xsmall" color={accent} weight="bold">Status</text>
+        <text size="xsmall" color={palette.text}>{whyThisScore(snap, activity)}</text>
+        <spacer size="small" />
+        <text size="xsmall" color={accent} weight="bold">Next</text>
+        <text size="xsmall" color={palette.text}>{nextActionShort(snap)}</text>
+      </hstack>
+      <hstack alignment="middle center" gap="small" width="100%">
+        {activityChip('10m', activity.comments10m, palette)}
+        {activityChip('30m', activity.comments30m, palette)}
+        {activityChip('Removed', activity.removals30m, palette)}
+        {activityChip('Base', baselineText(snap), palette)}
         <spacer size="small" />
         {sparkline(history, snap)}
       </hstack>
@@ -434,6 +435,15 @@ function settingCard(label: string, value: string, palette: DashboardPalette): J
   );
 }
 
+function activityChip(label: string, value: number | string, palette: DashboardPalette): JSX.Element {
+  return (
+    <hstack alignment="middle center" backgroundColor={palette.panel} cornerRadius="small" padding="xsmall" gap="small">
+      <text size="xsmall" color={palette.muted}>{label}</text>
+      <text size="xsmall" weight="bold" color={palette.text}>{String(value)}</text>
+    </hstack>
+  );
+}
+
 function normalizeHistory(history: SignalSnapshot[], snap: SignalSnapshot): number[] {
   const scores = history.map((entry) => entry.total).concat(snap.total).slice(-8);
   while (scores.length < 8) scores.unshift(0);
@@ -468,11 +478,34 @@ function alertDistance(snap: SignalSnapshot, config: EmberConfig): string {
   return `+${config.alertThreshold - snap.total} heat to alert`;
 }
 
+function communityStatus(snap: SignalSnapshot, activity: ActivityStats): string {
+  if (snap.total >= 75) return 'Critical heat detected. Act now.';
+  if (snap.total >= 56) return 'Community is hot. Review active threads.';
+  if (snap.total >= 31) return 'Early warning signals are present.';
+  if (activity.comments30m > 0 || activity.removals30m > 0) {
+    return `Quiet watch: ${activity.comments30m} comments, ${activity.removals30m} removals in 30m.`;
+  }
+  return 'Quiet watch: no active risk signals.';
+}
+
+function whyThisScore(snap: SignalSnapshot, activity: ActivityStats): string {
+  if (snap.total > 0) return `Heat from ${dominantSignal(snap)}.`;
+  if (activity.comments30m > 0) return 'Normal activity, no risk signals.';
+  return 'No active risk signals.';
+}
+
 function recommendedAction(snap: SignalSnapshot): string {
   if (snap.total >= 75) return 'Lock volatile threads, review reports, and alert the mod team.';
   if (snap.total >= 56) return 'Review active reports and watch fast-moving threads.';
   if (snap.total >= 31) return 'Keep watching. Early warning signals are present.';
   return 'No action needed. Ember will alert mods if heat rises.';
+}
+
+function nextActionShort(snap: SignalSnapshot): string {
+  if (snap.total >= 75) return 'Lock threads.';
+  if (snap.total >= 56) return 'Review reports.';
+  if (snap.total >= 31) return 'Watch closely.';
+  return 'No action needed.';
 }
 
 function scoreExplanation(snap: SignalSnapshot, activity: ActivityStats): string {
