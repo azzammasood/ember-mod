@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ember Radar Strip</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090604;
+        --panel: #1f1208;
+        --accent: #ff6b35;
+        --muted: #f59e0b;
+        --accent-rgb: 255, 107, 53;
+        --muted-rgb: 245, 158, 11;
+        --intensity: 0.58;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      body {
+        font-family: system-ui, sans-serif;
+      }
+
+      .frame {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 18px;
+        background:
+          radial-gradient(circle at 12% 50%, rgba(var(--accent-rgb), calc(0.16 + var(--intensity) * 0.22)), transparent 26%),
+          radial-gradient(circle at 28% 50%, rgba(var(--muted-rgb), 0.08), transparent 18%),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0.18)),
+          linear-gradient(135deg, var(--bg), var(--panel) 55%, rgba(var(--accent-rgb), 0.18));
+      }
+
+      .frame::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0) 34%, rgba(0, 0, 0, 0.26)),
+          radial-gradient(circle at center, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.18) 100%);
+      }
+
+      .grid,
+      .scanline,
+      .flare,
+      .scene {
+        position: absolute;
+        inset: 0;
+      }
+
+      .grid {
+        opacity: 0.28;
+        background:
+          repeating-linear-gradient(
+            90deg,
+            transparent 0,
+            transparent calc(12.5% - 1px),
+            rgba(255, 255, 255, 0.04) calc(12.5% - 1px),
+            rgba(255, 255, 255, 0.04) 12.5%
+          ),
+          repeating-linear-gradient(
+            180deg,
+            transparent 0,
+            transparent 23px,
+            rgba(255, 255, 255, 0.04) 24px
+          );
+      }
+
+      .scanline {
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+        mix-blend-mode: screen;
+        opacity: calc(0.18 + var(--intensity) * 0.12);
+        transform: translateX(-130%);
+        animation: slide 5.8s linear infinite;
+      }
+
+      .flare {
+        inset: auto auto 50% 12%;
+        width: 84px;
+        height: 84px;
+        transform: translate(-50%, 50%);
+        border-radius: 999px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(255, 250, 231, 0.82) 0, rgba(255, 183, 76, 0.56) 20%, rgba(var(--accent-rgb), 0.28) 44%, transparent 72%);
+        filter: blur(15px);
+        opacity: calc(0.32 + var(--intensity) * 0.4);
+        animation: breathe 3.2s ease-in-out infinite;
+      }
+
+      .scene {
+        width: 100%;
+        height: 100%;
+      }
+
+      .ring,
+      .pulse {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.14);
+        vector-effect: non-scaling-stroke;
+      }
+
+      .ring {
+        stroke-width: 1.2;
+      }
+
+      .pulse {
+        stroke: rgba(var(--accent-rgb), 0.34);
+        stroke-width: 1.5;
+      }
+
+      .pulse-a {
+        animation: pulse 3.4s ease-out infinite;
+      }
+
+      .pulse-b {
+        animation: pulse 3.4s ease-out 1.7s infinite;
+      }
+
+      .core {
+        fill: rgba(255, 255, 255, 0.92);
+        filter: url(#soft-glow);
+      }
+
+      .core-halo {
+        fill: rgba(var(--accent-rgb), 0.42);
+        filter: url(#soft-glow);
+      }
+
+      .sweep-arm {
+        transform-origin: 110px 60px;
+        animation: sweep 5.4s linear infinite;
+      }
+
+      .sweep {
+        stroke: url(#sweep-gradient);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        fill: none;
+        opacity: calc(0.24 + var(--intensity) * 0.34);
+        filter: url(#sweep-glow);
+      }
+
+      .track,
+      .track-glow {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .track {
+        stroke: rgba(255, 255, 255, 0.2);
+        stroke-width: 1.5;
+        stroke-dasharray: 5 11;
+        animation: drift 10s linear infinite;
+      }
+
+      .track-glow {
+        stroke: rgba(var(--accent-rgb), calc(0.22 + var(--intensity) * 0.28));
+        stroke-width: 2.5;
+        stroke-dasharray: 14 20;
+        filter: url(#soft-glow);
+        animation: drift 4.2s linear infinite reverse;
+      }
+
+      .particle {
+        fill: rgba(255, 248, 240, 0.9);
+        filter: url(#soft-glow);
+        animation: twinkle var(--speed, 3.2s) ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+        opacity: calc(0.3 + var(--intensity) * 0.55);
+      }
+
+      .particle.echo {
+        fill: rgba(var(--muted-rgb), 0.72);
+      }
+
+      @keyframes sweep {
+        from {
+          transform: rotate(-10deg);
+        }
+        to {
+          transform: rotate(350deg);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        18% {
+          opacity: 0.8;
+        }
+        100% {
+          opacity: 0;
+          transform: scale(1.18);
+        }
+      }
+
+      @keyframes drift {
+        from {
+          stroke-dashoffset: 0;
+        }
+        to {
+          stroke-dashoffset: -180;
+        }
+      }
+
+      @keyframes twinkle {
+        0%,
+        100% {
+          opacity: 0.22;
+          transform: scale(0.92);
+        }
+        50% {
+          opacity: 0.95;
+          transform: scale(1.18);
+        }
+      }
+
+      @keyframes slide {
+        from {
+          transform: translateX(-130%);
+        }
+        to {
+          transform: translateX(130%);
+        }
+      }
+
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: translate(-50%, 50%) scale(0.96);
+        }
+        50% {
+          transform: translate(-50%, 50%) scale(1.08);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .scanline,
+        .flare,
+        .pulse-a,
+        .pulse-b,
+        .sweep-arm,
+        .track,
+        .track-glow,
+        .particle {
+          animation: none !important;
+        }
+
+        .scanline {
+          opacity: 0;
+        }
+
+        .sweep-arm {
+          transform: rotate(22deg);
+        }
+
+        .pulse {
+          opacity: 0.28;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame" aria-hidden="true">
+      <div class="grid"></div>
+      <div class="scanline"></div>
+      <div class="flare"></div>
+
+      <svg class="scene" viewBox="0 0 800 120" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="sweep-gradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+            <stop offset="18%" stop-color="#ffffff" stop-opacity="0.52" />
+            <stop offset="58%" stop-color="#ffffff" stop-opacity="0.1" />
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+          </linearGradient>
+          <filter id="soft-glow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="3.2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="sweep-glow" x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <g>
+          <circle class="ring" cx="110" cy="60" r="24"></circle>
+          <circle class="ring" cx="110" cy="60" r="42"></circle>
+          <circle class="ring" cx="110" cy="60" r="62"></circle>
+          <circle class="pulse pulse-a" cx="110" cy="60" r="30"></circle>
+          <circle class="pulse pulse-b" cx="110" cy="60" r="52"></circle>
+          <circle class="core-halo" cx="110" cy="60" r="12"></circle>
+          <circle class="core" cx="110" cy="60" r="3.4"></circle>
+        </g>
+
+        <g class="sweep-arm">
+          <path class="sweep" d="M 110 60 L 770 60"></path>
+        </g>
+
+        <path
+          class="track"
+          d="M 142 78 C 214 54, 300 88, 384 58 S 548 72, 640 54 S 732 72, 792 50"
+        ></path>
+        <path
+          class="track-glow"
+          d="M 142 78 C 214 54, 300 88, 384 58 S 548 72, 640 54 S 732 72, 792 50"
+        ></path>
+
+        <g>
+          <circle class="particle" cx="232" cy="40" r="2.2" style="--delay: -0.2s; --speed: 2.8s;"></circle>
+          <circle class="particle echo" cx="302" cy="82" r="2" style="--delay: -1.2s; --speed: 3.6s;"></circle>
+          <circle class="particle" cx="378" cy="34" r="2.4" style="--delay: -2.1s; --speed: 3.1s;"></circle>
+          <circle class="particle echo" cx="472" cy="86" r="2.2" style="--delay: -0.8s; --speed: 3.8s;"></circle>
+          <circle class="particle" cx="556" cy="44" r="2.3" style="--delay: -2.7s; --speed: 3.4s;"></circle>
+          <circle class="particle echo" cx="646" cy="74" r="2" style="--delay: -1.8s; --speed: 2.9s;"></circle>
+          <circle class="particle" cx="730" cy="32" r="2.5" style="--delay: -0.5s; --speed: 3.3s;"></circle>
+        </g>
+      </svg>
+    </div>
+
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var root = document.documentElement;
+
+        function clamp(value, min, max) {
+          return Math.max(min, Math.min(max, value));
+        }
+
+        function normalizeHex(value, fallback) {
+          var source = (value || fallback || "").replace(/[^0-9a-fA-F]/g, "");
+          if (source.length === 3 || source.length === 4) {
+            source = source
+              .slice(0, 3)
+              .split("")
+              .map(function (char) {
+                return char + char;
+              })
+              .join("");
+          }
+          if (source.length < 6) {
+            return fallback;
+          }
+          return source.slice(0, 6);
+        }
+
+        function hexToRgb(hex) {
+          return [
+            parseInt(hex.slice(0, 2), 16),
+            parseInt(hex.slice(2, 4), 16),
+            parseInt(hex.slice(4, 6), 16),
+          ].join(", ");
+        }
+
+        var accent = normalizeHex(params.get("accent"), "ff6b35");
+        var muted = normalizeHex(params.get("muted"), "f59e0b");
+        var panel = normalizeHex(params.get("panel"), "1f1208");
+        var bg = normalizeHex(params.get("bg"), "090604");
+        var heat = clamp(Number(params.get("heat")) || 0, 0, 100);
+        var intensity = (0.34 + heat / 160).toFixed(2);
+
+        root.style.setProperty("--accent", "#" + accent);
+        root.style.setProperty("--muted", "#" + muted);
+        root.style.setProperty("--panel", "#" + panel);
+        root.style.setProperty("--bg", "#" + bg);
+        root.style.setProperty("--accent-rgb", hexToRgb(accent));
+        root.style.setProperty("--muted-rgb", hexToRgb(muted));
+        root.style.setProperty("--intensity", intensity);
+      })();
+    </script>
+  </body>
+</html>

@@ -21,6 +21,7 @@ type DashboardData = {
   theme?: DashboardTheme;
   panel?: DashboardPanel;
   chooser?: DashboardChooser;
+  showAnimatedStrip?: boolean;
   onThemePress?: () => void;
   onPanelPress?: () => void;
   onSettingsPress?: () => void;
@@ -84,6 +85,8 @@ export function renderDashboard(
   const panel = data.panel ?? 'trend';
   const chooser = data.chooser ?? 'none';
   const palette = themePalette(theme);
+  const status = communityStatus(snap, activity);
+  const showAnimatedStrip = data.showAnimatedStrip ?? true;
 
   if (chooser === 'theme') {
     return themePanel(palette, data);
@@ -94,19 +97,22 @@ export function renderDashboard(
   }
 
   return (
-    <vstack padding="small" gap="small" width="100%" height="100%" backgroundColor={palette.bg}>
+    <vstack padding="xsmall" gap="small" width="100%" height="100%" backgroundColor={palette.bg}>
       <hstack gap="none" width="100%">
         <vstack width="5%" />
         <vstack gap="small" width="90%" backgroundColor={palette.bg}>
-          <hstack alignment="middle center" gap="small" width="100%">
-            <vstack width="100%" gap="none">
+          <zstack width="100%" height="56px" backgroundColor={palette.card} cornerRadius="large">
+            {showAnimatedStrip ? (
+              <webview url={radarStripUrl(snap, palette)} width="100%" height="56px" />
+            ) : null}
+            <vstack alignment="middle center" gap="none" width="100%" height="100%" padding="xsmall">
               <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER // HEAT RADAR</text>
-              <text alignment="center" size="xsmall" color={palette.muted}>{communityStatus(snap, activity)}</text>
+              <text alignment="center" size="xsmall" color={palette.muted}>{status}</text>
             </vstack>
-          </hstack>
+          </zstack>
 
           <hstack gap="small" width="100%">
-            <vstack backgroundColor={meta.bg} cornerRadius="large" padding="small" gap="small" width="34%">
+            <vstack backgroundColor={meta.bg} cornerRadius="large" padding="xsmall" gap="small" width="34%">
               <text size="xxlarge" weight="bold" color="#ffffff">{snap.total}</text>
               <text size="xsmall" color="#e5e7eb">/100 Heat Score</text>
               <text size="small" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
@@ -115,7 +121,7 @@ export function renderDashboard(
               <text size="xsmall" color="#cbd5e1">Primary: {primary} | Base: {baselineText(snap)}</text>
             </vstack>
 
-            <vstack backgroundColor={palette.panel} cornerRadius="large" padding="small" gap="small" width="66%">
+            <vstack backgroundColor={palette.panel} cornerRadius="large" padding="xsmall" gap="small" width="66%">
               <hstack alignment="middle center" width="100%">
                 <text size="small" weight="bold" color={palette.text}>Signal Meters</text>
                 <spacer size="small" />
@@ -276,7 +282,7 @@ function detailPanel(
   }
 
   return (
-    <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
+    <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="xsmall" gap="small" width="100%">
       <hstack alignment="middle center" gap="small" width="100%">
         <text size="xsmall" color={accent} weight="bold">Status</text>
         <text size="xsmall" color={palette.text}>{whyThisScore(snap, activity)}</text>
@@ -652,4 +658,16 @@ export function nextDashboardPanel(panel: DashboardPanel): DashboardPanel {
   if (panel === 'ops') return 'actions';
   if (panel === 'actions') return 'explain';
   return 'trend';
+}
+
+function radarStripUrl(snap: SignalSnapshot, palette: DashboardPalette): string {
+  const params = new URLSearchParams({
+    accent: palette.accent.replace('#', ''),
+    muted: palette.muted.replace('#', ''),
+    panel: palette.panel.replace('#', ''),
+    bg: palette.bg.replace('#', ''),
+    heat: String(snap.total),
+    level: snap.level,
+  });
+  return `ember-radar.html?${params.toString()}`;
 }

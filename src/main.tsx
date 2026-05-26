@@ -192,7 +192,7 @@ Devvit.addMenuItem({
         await context.reddit.submitPost({
           title: `Ember Dashboard - ${subreddit.name}`,
           subredditName: subreddit.name,
-          preview: renderDashboard(snap, config, { history, lastAlert, activity }),
+          preview: renderDashboard(snap, config, { history, lastAlert, activity, showAnimatedStrip: false }),
           textFallback: { text: 'Ember dashboard requires the Reddit app or web client with Devvit custom posts enabled.' },
         });
       } catch (previewError) {

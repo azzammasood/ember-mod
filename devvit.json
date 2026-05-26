@@ -23,6 +23,15 @@
       "onAppUpgrade"
     ]
   },
+  "post": {
+    "dir": "webroot",
+    "entrypoints": {
+      "default": {
+        "entry": "ember-radar.html",
+        "height": "regular"
+      }
+    }
+  },
   "media": {
     "dir": "assets"
   },
