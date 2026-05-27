@@ -136,15 +136,17 @@ export function renderDashboard(
             </vstack>
           </hstack>
 
-          <hstack alignment="middle center" gap="small" width="100%">
-            <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onThemePress}>Theme</button>
-            <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
-            <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
-            <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onSettingsPress}>Settings</button>
-            <text size="xsmall" color={palette.muted}>Updated {formatTime(snap.computedAt)}</text>
-            <spacer size="medium" />
-            <text size="xsmall" color={palette.muted}>Threshold {config.alertThreshold}</text>
-          </hstack>
+          {chooser === 'panel' ? null : (
+            <hstack alignment="middle center" gap="small" width="100%">
+              <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onThemePress}>Theme</button>
+              <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
+              <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
+              <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onSettingsPress}>Settings</button>
+              <text size="xsmall" color={palette.muted}>Updated {formatTime(snap.computedAt)}</text>
+              <spacer size="medium" />
+              <text size="xsmall" color={palette.muted}>Threshold {config.alertThreshold}</text>
+            </hstack>
+          )}
 
           <hstack gap="small" width="100%">
             {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, activity, meta.accent, palette, data)}
@@ -319,7 +321,8 @@ function chooserPanel(
 ): JSX.Element {
   if (chooser === 'panel') {
     return (
-      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="none" width="100%">
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="xsmall" gap="none" width="100%">
+        <text size="xsmall" color={accent} weight="bold">Choose Panel</text>
         <hstack alignment="middle center" gap="small" width="100%">
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('trend')}>Trend</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('ops')}>Ops</button>
