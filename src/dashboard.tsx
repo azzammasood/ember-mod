@@ -102,9 +102,9 @@ export function renderDashboard(
       <hstack gap="none" width="100%">
         <vstack width="5%" />
         <vstack gap="small" width="90%" backgroundColor={palette.bg}>
-          <zstack width="100%" height="80px" backgroundColor={palette.card} cornerRadius="large">
+          <zstack width="100%" height="92px" backgroundColor={palette.card} cornerRadius="large">
             {showAnimatedStrip ? (
-              <webview id="ember-radar-view" url={radarStripUrl(snap)} width="100%" height="80px" />
+              <webview id="ember-radar-view" url={radarStripUrl(snap)} width="100%" height="92px" />
             ) : null}
             <vstack alignment="top center" gap="none" width="100%" height="100%" padding="xsmall">
               <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER // HEAT RADAR</text>

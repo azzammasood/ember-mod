@@ -232,7 +232,7 @@ Devvit.addMenuItem({
 
 Devvit.addCustomPostType({
   name: 'Ember Dashboard',
-  height: 'regular',
+  height: 'tall',
   render: (context) => {
     const [snapState, setSnapState] = context.useState(async (): Promise<any> => {
       return await getSnapshot(context.kvStore);
