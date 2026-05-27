@@ -98,10 +98,10 @@ export function renderDashboard(
   }
 
   return (
-    <vstack padding="none" gap="none" width="100%" backgroundColor={palette.bg}>
-      <hstack gap="none" width="100%">
-        <vstack width="5%" />
-        <vstack gap="small" width="90%" backgroundColor={palette.bg}>
+    <vstack padding="none" gap="none" width="100%" height="100%" backgroundColor={palette.bg}>
+      <hstack gap="none" width="100%" height="100%" alignment="middle center">
+        <vstack width="3%" />
+        <vstack gap="small" width="94%" backgroundColor={palette.bg}>
           <zstack width="100%" height="92px" backgroundColor={palette.card} cornerRadius="large">
             {showAnimatedStrip ? (
               <webview id="ember-radar-view" url={radarStripUrl(snap)} width="100%" height="92px" />
@@ -146,15 +146,14 @@ export function renderDashboard(
               <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
               <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
               <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onSettingsPress}>Settings</button>
-              <text size="xsmall" color={meta.accent} weight="bold">{panelLabel(panel)}</text>
-              <text size="xsmall" color={palette.text} overflow="ellipsis">{panelSummary(panel, snap, data.history ?? [], data.lastAlert, activity)}</text>
-              <text size="xsmall" color={palette.muted}>Updated {formatTime(snap.computedAt)}</text>
+              <text size="xsmall" color={meta.accent} weight="bold">{panelLabel(panel)}: {panelBrief(panel, snap, data.lastAlert, activity)}</text>
+              <text size="xsmall" color={palette.muted}>{formatTime(snap.computedAt)}</text>
               <spacer size="medium" />
-              <text size="xsmall" color={palette.muted}>Threshold {config.alertThreshold}</text>
+              <text size="xsmall" color={palette.muted}>T{config.alertThreshold}</text>
             </hstack>
           )}
         </vstack>
-        <vstack width="5%" />
+        <vstack width="3%" />
       </hstack>
     </vstack>
   );
@@ -324,7 +323,6 @@ function chooserPanel(
   if (chooser === 'panel') {
     return (
       <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="xsmall" gap="none" width="100%">
-        <text size="xsmall" color={accent} weight="bold">Choose Panel</text>
         <hstack alignment="middle center" gap="small" width="100%">
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('trend')}>Trend</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('ops')}>Ops</button>
@@ -344,6 +342,18 @@ function panelLabel(panel: DashboardPanel): string {
   if (panel === 'actions') return 'Action';
   if (panel === 'explain') return 'Why';
   return 'Status';
+}
+
+function panelBrief(
+  panel: DashboardPanel,
+  snap: SignalSnapshot,
+  lastAlert: AlertRecord | null | undefined,
+  activity: ActivityStats,
+): string {
+  if (panel === 'ops') return `${lastAlertText(lastAlert)} | ${activity.comments30m}c`;
+  if (panel === 'actions') return nextActionShort(snap);
+  if (panel === 'explain') return dominantSignal(snap);
+  return dominantSignal(snap);
 }
 
 function panelSummary(
