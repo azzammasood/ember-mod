@@ -247,6 +247,8 @@ function detailPanel(
   accent: string,
   palette: DashboardPalette,
 ): JSX.Element {
+  const samples = normalizeHistory(history, snap);
+
   if (panel === 'ops') {
     return (
       <hstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="medium" width="100%">
@@ -296,8 +298,9 @@ function detailPanel(
         {activityChip('30m', activity.comments30m, palette)}
         {activityChip('Removed', activity.removals30m, palette)}
         {activityChip('Base', baselineText(snap), palette)}
-        <spacer size="small" />
-        {sparkline(history, snap)}
+        {activityChip('Trend', trendDirection(samples), palette)}
+        {activityChip('Peak', peakScore(samples), palette)}
+        {activityChip('Now', snap.total, palette)}
       </hstack>
     </vstack>
   );
@@ -455,6 +458,23 @@ function normalizeHistory(history: SignalSnapshot[], snap: SignalSnapshot): numb
   const scores = history.map((entry) => entry.total).concat(snap.total).slice(-8);
   while (scores.length < 8) scores.unshift(0);
   return scores;
+}
+
+function peakScore(scores: number[]): number {
+  return Math.max(...scores);
+}
+
+function trendDirection(scores: number[]): string {
+  const previous = average(scores.slice(0, 4));
+  const recent = average(scores.slice(4));
+  if (recent >= previous + 8) return 'Rising';
+  if (recent <= previous - 8) return 'Falling';
+  return 'Steady';
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function sparkHeight(score: number): '22px' | '18px' | '14px' | '10px' {
