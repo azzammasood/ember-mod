@@ -33,6 +33,11 @@ type RuntimeContext = Pick<
   'kvStore' | 'reddit' | 'scheduler' | 'settings' | 'subredditName'
 >;
 
+type StickyPost = {
+  sticky(position?: 1 | 2 | 3 | 4): Promise<void>;
+  distinguish(): Promise<void>;
+};
+
 Devvit.configure({
   redditAPI: true,
   kvStore: true,
@@ -192,22 +197,24 @@ Devvit.addMenuItem({
       const subreddit = await context.reddit.getCurrentSubreddit();
       context.ui.showToast('Creating Ember dashboard...');
       try {
-        await context.reddit.submitPost({
+        const dashboardPost = await context.reddit.submitPost({
           title: 'Ember Dashboard',
           subredditName: subreddit.name,
           preview: renderDashboard(snap, config, { history, lastAlert, activity }),
           textFallback: { text: 'Ember dashboard requires the Reddit app or web client with Devvit custom posts enabled.' },
         });
+        await pinDashboardPost(dashboardPost);
       } catch (previewError) {
         console.error('[Ember] rich dashboard preview failed, trying fallback:', previewError);
-        await context.reddit.submitPost({
+        const fallbackPost = await context.reddit.submitPost({
           title: 'Ember Dashboard',
           subredditName: subreddit.name,
           preview: renderSafeDashboardFallback(),
           textFallback: { text: 'Ember dashboard is loading.' },
         });
+        await pinDashboardPost(fallbackPost);
       }
-      context.ui.showToast('Dashboard queued - refresh posts in a few seconds.');
+      context.ui.showToast('Dashboard queued and pinned - refresh posts in a few seconds.');
     } catch (error) {
       console.error('[Ember] dashboard menu action failed:', error);
       context.ui.showToast('Ember could not create the dashboard.');
@@ -230,9 +237,23 @@ Devvit.addMenuItem({
   },
 });
 
+async function pinDashboardPost(post: StickyPost): Promise<void> {
+  try {
+    await post.sticky(1);
+  } catch (error) {
+    console.error('[Ember] dashboard sticky failed:', error);
+  }
+
+  try {
+    await post.distinguish();
+  } catch (error) {
+    console.error('[Ember] dashboard distinguish failed:', error);
+  }
+}
+
 Devvit.addCustomPostType({
   name: 'Ember Dashboard',
-  height: 'regular',
+  height: 'tall',
   render: (context) => {
     const [snapState, setSnapState] = context.useState(async (): Promise<any> => {
       return await getSnapshot(context.kvStore);

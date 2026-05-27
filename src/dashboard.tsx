@@ -98,63 +98,56 @@ export function renderDashboard(
   }
 
   return (
-    <vstack padding="none" gap="none" width="100%" height="100%" backgroundColor={palette.bg}>
-      <hstack gap="none" width="100%" height="100%" alignment="middle center">
-        <vstack width="3%" />
-        <vstack gap="small" width="94%" backgroundColor={palette.bg}>
-          <zstack width="100%" height="92px" backgroundColor={palette.card} cornerRadius="large">
-            {showAnimatedStrip ? (
-              <webview id="ember-radar-view" url={radarStripUrl(snap)} width="100%" height="92px" />
-            ) : null}
-            <vstack alignment="top center" gap="none" width="100%" height="100%" padding="xsmall">
-              <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER // HEAT RADAR</text>
-              <text alignment="center" size="xsmall" color={palette.muted}>{status}</text>
-            </vstack>
-          </zstack>
+    <vstack padding="none" gap="none" width="100%" height="100%" backgroundColor={palette.bg} alignment="middle center">
+      <vstack gap="small" width="94%" height="100%" backgroundColor={palette.bg} alignment="middle center">
+        <zstack width="100%" height="112px" backgroundColor={palette.card} cornerRadius="large">
+          {showAnimatedStrip ? (
+            <webview id="ember-radar-view" url={radarStripUrl(snap)} width="100%" height="112px" />
+          ) : null}
+          <vstack alignment="top center" gap="none" width="100%" height="100%" padding="xsmall">
+            <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER // HEAT RADAR</text>
+            <text alignment="center" size="xsmall" color={palette.muted}>{status}</text>
+          </vstack>
+        </zstack>
 
-          <hstack gap="small" width="100%">
-            <vstack backgroundColor={meta.bg} cornerRadius="large" padding="xsmall" gap="small" width="34%">
-              <text size="xxlarge" weight="bold" color="#ffffff">{snap.total}</text>
-              <text size="xsmall" color="#e5e7eb">/100 Heat Score</text>
-              <text size="small" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
-              <text size="xsmall" color="#f8fafc">Mode: {modeLabel(snap)}</text>
-              <text size="xsmall" color="#f8fafc">{alertDistance(snap, config)}</text>
-              <text size="xsmall" color="#cbd5e1">Primary: {primary} | Base: {baselineText(snap)}</text>
-            </vstack>
+        <hstack gap="small" width="100%" height="190px">
+          <vstack backgroundColor={meta.bg} cornerRadius="large" padding="xsmall" gap="small" width="34%" height="190px">
+            <text size="xxlarge" weight="bold" color="#ffffff">{snap.total}</text>
+            <text size="xsmall" color="#e5e7eb">/100 Heat Score</text>
+            <text size="small" weight="bold" color="#ffffff">{meta.emoji} {meta.label}</text>
+            <text size="xsmall" color="#f8fafc">Mode: {modeLabel(snap)}</text>
+            <text size="xsmall" color="#f8fafc">{alertDistance(snap, config)}</text>
+            <text size="xsmall" color="#cbd5e1">Primary: {primary} | Base: {baselineText(snap)}</text>
+          </vstack>
 
-            <vstack backgroundColor={palette.panel} cornerRadius="large" padding="xsmall" gap="small" width="66%">
-              <hstack alignment="middle center" width="100%">
-                <text size="small" weight="bold" color={palette.text}>Signal Meters</text>
-                <spacer size="small" />
-                <text size="xsmall" color={meta.accent}>{modeLabel(snap)}</text>
-              </hstack>
-              {signalMeterRow(SIGNALS[0], snap, palette)}
-              {signalMeterRow(SIGNALS[1], snap, palette)}
-              {signalMeterRow(SIGNALS[2], snap, palette)}
-              {signalMeterRow(SIGNALS[3], snap, palette)}
-              {signalMeterRow(SIGNALS[4], snap, palette)}
-            </vstack>
-          </hstack>
-
-          {chooser === 'panel' ? (
-            <hstack gap="small" width="100%">
-              {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, activity, meta.accent, palette, data)}
+          <vstack backgroundColor={palette.panel} cornerRadius="large" padding="xsmall" gap="small" width="66%" height="190px">
+            <hstack alignment="middle center" width="100%">
+              <text size="small" weight="bold" color={palette.text}>Signal Meters</text>
+              <spacer size="small" />
+              <text size="xsmall" color={meta.accent}>{modeLabel(snap)}</text>
             </hstack>
-          ) : (
-            <hstack alignment="middle center" gap="small" width="100%">
-              <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onThemePress}>Theme</button>
-              <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
-              <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
-              <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onSettingsPress}>Settings</button>
-              <text size="xsmall" color={meta.accent} weight="bold">{panelLabel(panel)}: {panelBrief(panel, snap, data.lastAlert, activity)}</text>
-              <text size="xsmall" color={palette.muted}>{formatTime(snap.computedAt)}</text>
-              <spacer size="medium" />
-              <text size="xsmall" color={palette.muted}>T{config.alertThreshold}</text>
-            </hstack>
-          )}
-        </vstack>
-        <vstack width="3%" />
-      </hstack>
+            {signalMeterRow(SIGNALS[0], snap, palette)}
+            {signalMeterRow(SIGNALS[1], snap, palette)}
+            {signalMeterRow(SIGNALS[2], snap, palette)}
+            {signalMeterRow(SIGNALS[3], snap, palette)}
+            {signalMeterRow(SIGNALS[4], snap, palette)}
+          </vstack>
+        </hstack>
+
+        <hstack alignment="middle center" gap="small" width="100%">
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onThemePress}>Theme</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
+          <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onSettingsPress}>Settings</button>
+          <spacer size="small" />
+          <text size="xsmall" color={palette.muted}>{formatTime(snap.computedAt)}</text>
+          <text size="xsmall" color={palette.muted}>T{config.alertThreshold}</text>
+        </hstack>
+
+        <hstack gap="small" width="100%">
+          {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, activity, meta.accent, palette, data)}
+        </hstack>
+      </vstack>
     </vstack>
   );
 }
@@ -254,43 +247,61 @@ function detailPanel(
 
   if (panel === 'ops') {
     return (
-      <hstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="medium" width="100%">
-        <text size="xsmall" color={accent} weight="bold">Ops Status</text>
-        <spacer size="small" />
-        <text size="xsmall" color={palette.muted}>Last alert</text>
-        <text size="small" color={palette.text} weight="bold">{lastAlertText(lastAlert)}</text>
-        <spacer size="small" />
-        <text size="xsmall" color={palette.muted}>Baseline</text>
-        <text size="small" color={palette.text} weight="bold">{baselineText(snap)}</text>
-        <spacer size="small" />
-        <text size="xsmall" color={palette.muted}>Comments 30m</text>
-        <text size="small" color={palette.text} weight="bold">{activity.comments30m}</text>
-      </hstack>
+      <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%" height="116px">
+        <hstack alignment="middle center" width="100%">
+          <text size="xsmall" color={accent} weight="bold">Ops Status</text>
+          <spacer size="small" />
+          <text size="xsmall" color={palette.muted}>Operational snapshot for the mod team</text>
+        </hstack>
+        <hstack alignment="middle center" gap="small" width="100%">
+          {activityChip('Alert', lastAlertText(lastAlert), palette)}
+          {activityChip('Base', baselineText(snap), palette)}
+          {activityChip('C30', activity.comments30m, palette)}
+          {activityChip('R60', activity.reports60m, palette)}
+          {activityChip('Rem30', activity.removals30m, palette)}
+        </hstack>
+      </vstack>
     );
   }
 
   if (panel === 'actions') {
     return (
-      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-        <text alignment="center" size="xsmall" color={accent} weight="bold">Recommended Action</text>
-        <text alignment="center" size="xsmall" color={palette.text}>{recommendedAction(snap)}</text>
+      <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%" height="116px">
+        <text size="xsmall" color={accent} weight="bold">Recommended Action</text>
+        <text size="xsmall" color={palette.text}>{recommendedAction(snap)}</text>
+        <hstack alignment="middle center" gap="small" width="100%">
+          {activityChip('Primary', dominantSignal(snap), palette)}
+          {activityChip('Mode', modeLabel(snap), palette)}
+          {activityChip('Alert', snap.total >= 20 ? 'Reached' : 'Quiet', palette)}
+        </hstack>
       </vstack>
     );
   }
 
   if (panel === 'explain') {
     return (
-      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%">
-        <text alignment="center" size="xsmall" color={accent} weight="bold">Score Explanation</text>
-        <text alignment="center" size="xsmall" color={palette.text}>{scoreExplanation(snap, activity)}</text>
+      <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%" height="116px">
+        <hstack alignment="middle center" width="100%">
+          <text size="xsmall" color={accent} weight="bold">Score Explanation</text>
+          <spacer size="small" />
+          <text size="xsmall" color={palette.muted}>{snap.total}/100 total heat</text>
+        </hstack>
+        <text size="xsmall" color={palette.text}>{scoreExplanation(snap, activity)}</text>
+        <hstack alignment="middle center" gap="small" width="100%">
+          {signalChip(SIGNALS[0], snap, palette)}
+          {signalChip(SIGNALS[1], snap, palette)}
+          {signalChip(SIGNALS[2], snap, palette)}
+          {signalChip(SIGNALS[3], snap, palette)}
+          {signalChip(SIGNALS[4], snap, palette)}
+        </hstack>
       </vstack>
     );
   }
 
   return (
-    <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="xsmall" gap="small" width="100%">
+    <vstack backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="small" width="100%" height="116px">
       <hstack alignment="middle center" gap="small" width="100%">
-        <text size="xsmall" color={accent} weight="bold">Status</text>
+        <text size="xsmall" color={accent} weight="bold">Trend</text>
         <text size="xsmall" color={palette.text}>{whyThisScore(snap, activity)}</text>
         <spacer size="small" />
         <text size="xsmall" color={accent} weight="bold">Next</text>
@@ -322,7 +333,7 @@ function chooserPanel(
 ): JSX.Element {
   if (chooser === 'panel') {
     return (
-      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="xsmall" gap="none" width="100%">
+      <vstack alignment="middle center" backgroundColor={palette.card} cornerRadius="medium" padding="small" gap="none" width="100%" height="116px">
         <hstack alignment="middle center" gap="small" width="100%">
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('trend')}>Trend</button>
           <button size="small" appearance="primary" textColor="#ffffff" onPress={() => data.onChoosePanel?.('ops')}>Ops</button>
@@ -495,6 +506,16 @@ function activityChip(label: string, value: number | string, palette: DashboardP
     <hstack alignment="middle center" backgroundColor={palette.panel} cornerRadius="small" padding="xsmall" gap="small">
       <text size="xsmall" color={palette.muted}>{label}</text>
       <text size="xsmall" weight="bold" color={palette.text}>{String(value)}</text>
+    </hstack>
+  );
+}
+
+function signalChip(signal: HeatmapSignal, snap: SignalSnapshot, palette: DashboardPalette): JSX.Element {
+  const score = snap[signal.key];
+  return (
+    <hstack alignment="middle center" backgroundColor={palette.panel} cornerRadius="small" padding="xsmall" gap="small">
+      <text size="xsmall" color={score > 0 ? signal.color : palette.muted}>{signal.label}</text>
+      <text size="xsmall" weight="bold" color={palette.text}>{score}</text>
     </hstack>
   );
 }
