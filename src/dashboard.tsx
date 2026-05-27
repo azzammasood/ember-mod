@@ -136,21 +136,23 @@ export function renderDashboard(
             </vstack>
           </hstack>
 
-          {chooser === 'panel' ? null : (
+          {chooser === 'panel' ? (
+            <hstack gap="small" width="100%">
+              {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, activity, meta.accent, palette, data)}
+            </hstack>
+          ) : (
             <hstack alignment="middle center" gap="small" width="100%">
               <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onThemePress}>Theme</button>
               <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onPanelPress}>Panel</button>
               <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
               <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onSettingsPress}>Settings</button>
+              <text size="xsmall" color={meta.accent} weight="bold">{panelLabel(panel)}</text>
+              <text size="xsmall" color={palette.text} overflow="ellipsis">{panelSummary(panel, snap, data.history ?? [], data.lastAlert, activity)}</text>
               <text size="xsmall" color={palette.muted}>Updated {formatTime(snap.computedAt)}</text>
               <spacer size="medium" />
               <text size="xsmall" color={palette.muted}>Threshold {config.alertThreshold}</text>
             </hstack>
           )}
-
-          <hstack gap="small" width="100%">
-            {chooserPanel(chooser, snap, panel, data.history ?? [], data.lastAlert, activity, meta.accent, palette, data)}
-          </hstack>
         </vstack>
         <vstack width="5%" />
       </hstack>
@@ -335,6 +337,36 @@ function chooserPanel(
   }
 
   return detailPanel(panel, snap, history, lastAlert, activity, accent, palette);
+}
+
+function panelLabel(panel: DashboardPanel): string {
+  if (panel === 'ops') return 'Ops';
+  if (panel === 'actions') return 'Action';
+  if (panel === 'explain') return 'Why';
+  return 'Status';
+}
+
+function panelSummary(
+  panel: DashboardPanel,
+  snap: SignalSnapshot,
+  history: SignalSnapshot[],
+  lastAlert: AlertRecord | null | undefined,
+  activity: ActivityStats,
+): string {
+  if (panel === 'ops') {
+    return `Last alert ${lastAlertText(lastAlert)} | Base ${baselineText(snap)} | Comments ${activity.comments30m}`;
+  }
+
+  if (panel === 'actions') {
+    return recommendedAction(snap);
+  }
+
+  if (panel === 'explain') {
+    return scoreExplanation(snap, activity);
+  }
+
+  const samples = normalizeHistory(history, snap);
+  return `${whyThisScore(snap, activity)} Next: ${nextActionShort(snap)} Trend: ${trendDirection(samples)}.`;
 }
 
 function themePanel(palette: DashboardPalette, data: DashboardData): JSX.Element {
