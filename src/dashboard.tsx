@@ -104,7 +104,7 @@ export function renderDashboard(
         <vstack gap="small" width="90%" backgroundColor={palette.bg}>
           <zstack width="100%" height="80px" backgroundColor={palette.card} cornerRadius="large">
             {showAnimatedStrip ? (
-              <webview id="ember-radar-view" url={radarStripUrl(snap, palette)} width="100%" height="80px" />
+              <webview id="ember-radar-view" url={radarStripUrl(snap)} width="100%" height="80px" />
             ) : null}
             <vstack alignment="top center" gap="none" width="100%" height="100%" padding="xsmall">
               <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER // HEAT RADAR</text>
@@ -663,14 +663,10 @@ export function nextDashboardPanel(panel: DashboardPanel): DashboardPanel {
   return 'trend';
 }
 
-function radarStripUrl(snap: SignalSnapshot, palette: DashboardPalette): string {
-  const params = new URLSearchParams({
-    score: String(snap.total),
-    level: snap.level,
-    accent: palette.accent.replace('#', ''),
-    muted: palette.muted.replace('#', ''),
-    panel: palette.panel.replace('#', ''),
-    bg: palette.bg.replace('#', ''),
-  });
-  return `ember-radar.html?${params.toString()}`;
+function radarStripUrl(snap: SignalSnapshot): string {
+  if (snap.total <= 0) return 'ember-radar-zero.html';
+  if (snap.total <= 30) return 'ember-radar-cool.html';
+  if (snap.total <= 55) return 'ember-radar-warming.html';
+  if (snap.total <= 74) return 'ember-radar-hot.html';
+  return 'ember-radar-ember.html';
 }

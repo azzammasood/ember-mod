@@ -3,7 +3,6 @@ import type { Context } from '@devvit/public-api';
 
 import { maybeSendAlert } from './alerter.js';
 import {
-  nextDashboardPanel,
   renderDashboard,
   renderLoadingDashboard,
   renderSafeDashboardFallback,
@@ -196,7 +195,7 @@ Devvit.addMenuItem({
         await context.reddit.submitPost({
           title: 'Ember Dashboard',
           subredditName: subreddit.name,
-          preview: renderDashboard(snap, config, { history, lastAlert, activity, showAnimatedStrip: false }),
+          preview: renderDashboard(snap, config, { history, lastAlert, activity }),
           textFallback: { text: 'Ember dashboard requires the Reddit app or web client with Devvit custom posts enabled.' },
         });
       } catch (previewError) {
@@ -268,10 +267,7 @@ Devvit.addCustomPostType({
       panel,
       chooser,
       onThemePress: () => setChooser(chooser === 'theme' ? 'none' : 'theme'),
-      onPanelPress: () => {
-        setPanel(nextDashboardPanel(panel));
-        setChooser('none');
-      },
+      onPanelPress: () => setChooser(chooser === 'panel' ? 'none' : 'panel'),
       onSettingsPress: () => setChooser('settings'),
       onRefresh: async () => {
         const latestSnap = await scanAndMaybeAlert(context);
