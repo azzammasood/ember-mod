@@ -26,6 +26,7 @@ type DashboardData = {
   onPanelPress?: () => void;
   onSettingsPress?: () => void;
   onRefresh?: () => void | Promise<void>;
+  onTriggerDemo?: () => void | Promise<void>;
   onChooseTheme?: (theme: DashboardTheme) => void;
   onChoosePanel?: (panel: DashboardPanel) => void;
   onCloseChooser?: () => void;
@@ -97,15 +98,15 @@ export function renderDashboard(
   }
 
   return (
-    <vstack padding="xsmall" gap="small" width="100%" height="100%" backgroundColor={palette.bg}>
+    <vstack padding="none" gap="none" width="100%" backgroundColor={palette.bg}>
       <hstack gap="none" width="100%">
         <vstack width="5%" />
         <vstack gap="small" width="90%" backgroundColor={palette.bg}>
-          <zstack width="100%" height="56px" backgroundColor={palette.card} cornerRadius="large">
+          <zstack width="100%" height="80px" backgroundColor={palette.card} cornerRadius="large">
             {showAnimatedStrip ? (
-              <webview url={radarStripUrl(snap, palette)} width="100%" height="56px" />
+              <webview id="ember-radar-view" url={radarStripUrl(snap, palette)} width="100%" height="80px" />
             ) : null}
-            <vstack alignment="middle center" gap="none" width="100%" height="100%" padding="xsmall">
+            <vstack alignment="top center" gap="none" width="100%" height="100%" padding="xsmall">
               <text alignment="center" size="large" weight="bold" color={palette.accent}>EMBER // HEAT RADAR</text>
               <text alignment="center" size="xsmall" color={palette.muted}>{status}</text>
             </vstack>
@@ -385,6 +386,8 @@ function settingsPanel(
           <text size="xsmall" color={palette.muted}>Install configuration snapshot</text>
         </vstack>
         <spacer size="medium" />
+        <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onTriggerDemo}>Trigger Demo</button>
+        <spacer size="small" />
         <button size="small" appearance="primary" textColor="#ffffff" onPress={data.onRefresh}>Refresh</button>
         <spacer size="small" />
         <button size="small" appearance="secondary" textColor="#ffffff" onPress={data.onCloseChooser}>Close</button>
@@ -424,7 +427,7 @@ function settingsPanel(
 
       <vstack backgroundColor={palette.panel} cornerRadius="medium" padding="small" gap="small" width="100%">
         <text size="xsmall" weight="bold" color={palette.accent}>Edit settings</text>
-        <text size="xsmall" color={palette.text}>Dashboard settings are read-only here. Change alert threshold, cooldown, scan interval, and mute alerts in Mod Tools - Apps - Ember.</text>
+        <text size="xsmall" color={palette.text}>Read-only here. Use Trigger Demo above for a live sample board, or change threshold and alerts in Mod Tools - Apps - Ember.</text>
       </vstack>
     </vstack>
   );
@@ -662,12 +665,12 @@ export function nextDashboardPanel(panel: DashboardPanel): DashboardPanel {
 
 function radarStripUrl(snap: SignalSnapshot, palette: DashboardPalette): string {
   const params = new URLSearchParams({
+    score: String(snap.total),
+    level: snap.level,
     accent: palette.accent.replace('#', ''),
     muted: palette.muted.replace('#', ''),
     panel: palette.panel.replace('#', ''),
     bg: palette.bg.replace('#', ''),
-    heat: String(snap.total),
-    level: snap.level,
   });
   return `ember-radar.html?${params.toString()}`;
 }

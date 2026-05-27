@@ -78,6 +78,15 @@ export async function getSnapshotHistory(kvStore: any): Promise<SignalSnapshot[]
   }
 }
 
+export async function saveSnapshotHistory(kvStore: any, history: SignalSnapshot[]): Promise<void> {
+  try {
+    const next = history.filter(isSignalSnapshot).slice(-12);
+    await kvStore.put(SNAPSHOT_HISTORY_KEY, JSON.stringify(next));
+  } catch (error) {
+    console.error('[Ember] signalStore.saveSnapshotHistory failed:', error);
+  }
+}
+
 export async function getLastAlert(kvStore: any): Promise<AlertRecord | null> {
   try {
     const raw = await kvStore.get(LAST_ALERT_KEY);

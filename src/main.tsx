@@ -3,6 +3,7 @@ import type { Context } from '@devvit/public-api';
 
 import { maybeSendAlert } from './alerter.js';
 import {
+  nextDashboardPanel,
   renderDashboard,
   renderLoadingDashboard,
   renderSafeDashboardFallback,
@@ -14,6 +15,8 @@ import {
   getLastAlert,
   getSnapshot,
   getSnapshotHistory,
+  saveLastAlert,
+  saveSnapshotHistory,
   getWindow,
   saveSnapshot,
   saveWindow,
@@ -23,8 +26,9 @@ import type { ActivityStats, EmberConfig, EmberSettings, RollingWindow, SignalSn
 const SCAN_JOB = 'ember-scan';
 const DAILY_RESET_JOB = 'ember-daily-reset';
 const DEFAULT_SCAN_INTERVAL_MINUTES = 5;
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
 const DAY = 24 * 60 * 60 * 1000;
-
 type RuntimeContext = Pick<
   Context,
   'kvStore' | 'reddit' | 'scheduler' | 'settings' | 'subredditName'
@@ -190,7 +194,7 @@ Devvit.addMenuItem({
       context.ui.showToast('Creating Ember dashboard...');
       try {
         await context.reddit.submitPost({
-          title: `Ember Dashboard - ${subreddit.name}`,
+          title: 'Ember Dashboard',
           subredditName: subreddit.name,
           preview: renderDashboard(snap, config, { history, lastAlert, activity, showAnimatedStrip: false }),
           textFallback: { text: 'Ember dashboard requires the Reddit app or web client with Devvit custom posts enabled.' },
@@ -198,7 +202,7 @@ Devvit.addMenuItem({
       } catch (previewError) {
         console.error('[Ember] rich dashboard preview failed, trying fallback:', previewError);
         await context.reddit.submitPost({
-          title: `Ember Dashboard - ${subreddit.name}`,
+          title: 'Ember Dashboard',
           subredditName: subreddit.name,
           preview: renderSafeDashboardFallback(),
           textFallback: { text: 'Ember dashboard is loading.' },
@@ -264,7 +268,10 @@ Devvit.addCustomPostType({
       panel,
       chooser,
       onThemePress: () => setChooser(chooser === 'theme' ? 'none' : 'theme'),
-      onPanelPress: () => setChooser(chooser === 'panel' ? 'none' : 'panel'),
+      onPanelPress: () => {
+        setPanel(nextDashboardPanel(panel));
+        setChooser('none');
+      },
       onSettingsPress: () => setChooser('settings'),
       onRefresh: async () => {
         const latestSnap = await scanAndMaybeAlert(context);
@@ -273,6 +280,17 @@ Devvit.addCustomPostType({
         setHistoryState(await getSnapshotHistory(context.kvStore));
         setLastAlertState(await getLastAlert(context.kvStore));
         setActivityState(computeActivityStats(await getWindow(context.kvStore)));
+      },
+      onTriggerDemo: async () => {
+        const demoSnap = await seedDemoScenario(context);
+        setSnapState(demoSnap);
+        setConfigState(await loadConfig(context));
+        setHistoryState(await getSnapshotHistory(context.kvStore));
+        setLastAlertState(await getLastAlert(context.kvStore));
+        setActivityState(computeActivityStats(await getWindow(context.kvStore)));
+        setPanel('trend');
+        setChooser('none');
+        context.ui.showToast(`Demo loaded: ${demoSnap.total}/100 heat`);
       },
       onChooseTheme: (nextTheme) => {
         setTheme(nextTheme);
@@ -297,6 +315,25 @@ async function recordReport(context: RuntimeContext, targetType: string): Promis
   } catch (error) {
     console.error('[Ember] report trigger failed:', error);
   }
+}
+
+async function seedDemoScenario(context: Pick<Context, 'kvStore'>): Promise<SignalSnapshot> {
+  const now = Date.now();
+  const window = buildDemoWindow(now);
+  const snapshot = computeHeat(window);
+  const history = buildDemoHistory(now);
+
+  await saveWindow(context.kvStore, window);
+  await saveSnapshotHistory(context.kvStore, history);
+  await saveSnapshot(context.kvStore, snapshot);
+  await saveLastAlert(context.kvStore, {
+    firedAt: now - 6 * MINUTE,
+    heatScore: snapshot.total,
+    level: snapshot.level,
+    snapshot,
+  });
+
+  return snapshot;
 }
 
 async function scanAndMaybeAlert(context: RuntimeContext): Promise<SignalSnapshot> {
@@ -427,6 +464,50 @@ function emptyRuntimeWindow(): RollingWindow {
     newAccountComments: [],
     controversialPosts: [],
   };
+}
+
+function buildDemoWindow(now: number): RollingWindow {
+  const commentTimestamps = [
+    ...Array.from({ length: 104 }, (_, index) => now - 23 * HOUR + index * 13 * MINUTE),
+    now - 9 * MINUTE,
+    now - 8 * MINUTE,
+    now - 7 * MINUTE,
+    now - 6 * MINUTE,
+    now - 5 * MINUTE,
+    now - 4 * MINUTE,
+    now - 3 * MINUTE,
+  ];
+
+  const reportTimestamps = [
+    ...Array.from({ length: 24 }, (_, index) => now - 6 * DAY + index * 6 * HOUR),
+    now - 48 * MINUTE,
+    now - 40 * MINUTE,
+    now - 29 * MINUTE,
+    now - 18 * MINUTE,
+    now - 7 * MINUTE,
+  ];
+
+  return {
+    reportTimestamps,
+    commentTimestamps,
+    removalTimestamps: [now - 7 * MINUTE, now - 5 * MINUTE, now - 2 * MINUTE],
+    newAccountComments: [now - 8 * MINUTE, now - 5 * MINUTE, now - 3 * MINUTE],
+    controversialPosts: [now - 42 * MINUTE, now - 19 * MINUTE, now - 6 * MINUTE],
+  };
+}
+
+function buildDemoHistory(now: number): SignalSnapshot[] {
+  const totals = [8, 12, 18, 29, 43, 58, 71];
+  return totals.map((total, index) => ({
+    reportSpike: Math.max(0, Math.min(30, Math.round(total * 0.26))),
+    removalSurge: Math.max(0, Math.min(25, Math.round(total * 0.2))),
+    newAccountFlood: Math.max(0, Math.min(20, Math.round(total * 0.17))),
+    velocitySpike: Math.max(0, Math.min(15, Math.round(total * 0.14))),
+    controversyCluster: Math.max(0, Math.min(10, Math.round(total * 0.09))),
+    total,
+    level: total <= 30 ? 'cool' : total <= 55 ? 'warming' : total <= 74 ? 'hot' : 'ember',
+    computedAt: now - (totals.length - index) * 3 * MINUTE,
+  }));
 }
 
 function computeActivityStats(window: RollingWindow): ActivityStats {
